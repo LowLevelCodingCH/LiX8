@@ -1,5 +1,0 @@
-AddExe lix8
-Source src/main.cpp
-Link stdc++
-Link c
-Link m
