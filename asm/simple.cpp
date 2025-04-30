@@ -69,7 +69,7 @@ enum inst {
 namespace lixasm
 {
 /*
- * @param String of the token
+ * @param Name of the token
  * @return number to be put rawly into the executable file
  * @note uses yoda notation (lit == var) instead of "normal" notation (var == lit),
  *       To prevent this: (var = lit) from accidentally happening
