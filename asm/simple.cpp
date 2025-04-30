@@ -84,7 +84,6 @@ int main(int argc, char *argv[])
 	std::string         line;
 	std::stringstream   text;
 	std::vector<short>  output;
-	short               *out;
 
 	while(std::getline(file, line))
 		text << line << ' ';
@@ -146,21 +145,21 @@ int main(int argc, char *argv[])
 			output.push_back((short)inst::IN);
 		else if("sp" == htok)
 			output.push_back((short)reg::SP);
-		else if("l0" == htok)
+		else if("l0" == htok || "r0" == htok)
 			output.push_back((short)reg::L0);
-		else if("l1" == htok)
+		else if("l1" == htok || "r1" == htok)
 			output.push_back((short)reg::L1);
-		else if("l2" == htok)
+		else if("l2" == htok || "r2" == htok)
 			output.push_back((short)reg::L2);
-		else if("l3" == htok)
+		else if("l3" == htok || "r3" == htok)
 			output.push_back((short)reg::L3);
-		else if("l4" == htok)
+		else if("l4" == htok || "r4" == htok)
 			output.push_back((short)reg::L4);
-		else if("l5" == htok)
+		else if("l5" == htok || "r5" == htok)
 			output.push_back((short)reg::L5);
-		else if("l6" == htok)
+		else if("l6" == htok || "r6" == htok)
 			output.push_back((short)reg::L6);
-		else if("l7" == htok)
+		else if("l7" == htok || "r7" == htok)
 			output.push_back((short)reg::L7);
 		else {
 			try {
@@ -171,10 +170,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	out = output.data();
-
 	std::ofstream ofile("a.bin");
 	ofile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
-	std::cout << out << "\n"; 
 	ofile.close();
 }
