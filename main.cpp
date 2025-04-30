@@ -4,7 +4,12 @@
 #include <iostream>
 #include <sstream>
 
-#define PROGLEN (9 * 3)
+/*
+ * @author LowLevelCodingCH (Alex), 2025
+ * @copyright BSD 2 Clause, (c) LowLevelCodingCH
+ */
+
+#define PROGLEN 100
 #define PROGADR 0
 
 enum reg {
@@ -67,7 +72,10 @@ enum inst {
 #define cr(I)                                                                                         \
 	case I:                                                                                       \
 		return #I
-
+/*
+ * @brief Returns string name of an instruction
+ * @param Instruction to return the name of
+ */
 std::string intoa(short i)
 {
 	switch (i) {
@@ -109,6 +117,9 @@ struct lix {
 	std::uint8_t rmemory[16384]; // Not included by def
 	std::uint16_t* memory;
 
+	/*
+	 * @brief Prints a program
+	 */
 	void printprog()
 	{
 		for (int i = 0; i < PROGLEN * 3; i++)
@@ -116,12 +127,18 @@ struct lix {
 		std::cout << std::endl;
 	}
 
+	/*
+	 * @brief Prints an instruction
+	 */
 	void printinst()
 	{
 		std::cout << intoa(this->inst) << " " << (int) this->arg0 << ", " << (int) this->arg1
 			  << std::endl;
 	}
 
+	/*
+	 * @brief Fetches an instruction
+	 */
 	void fetch()
 	{
 		this->inst = this->memory[this->registers[reg::PC]];
@@ -130,17 +147,20 @@ struct lix {
 		this->registers[reg::PC] += 3;
 	}
 
+	/*
+	 * @brief Executes the instruction in inst, arg0 and arg1
+	 */
 	void execute()
 	{
 		switch (this->inst) {
-		case inst::CMP: {
+		case inst::CMP:
 			if (this->registers[(reg) this->arg0] > this->registers[(reg) this->arg1])
 				this->registers[reg::F1] = 1;
 			if (this->registers[(reg) this->arg0] < this->registers[(reg) this->arg1])
 				this->registers[reg::F1] = 2;
 			if (this->registers[(reg) this->arg0] == this->registers[(reg) this->arg1])
 				this->registers[reg::F1] = 0;
-		}; break; // break out
+			break; // break out
 		case inst::NOP:
 			break; // break out
 		case inst::HLT:
@@ -267,8 +287,8 @@ struct lix {
 // Li X 16 CPU
 
 #define HW_SUP
-#undef HW_SUP
-#define SGA_ADR 0x2000
+// #undef HW_SUP
+#define SGA_ADR 0x2000 /* "Video card"'s ram would be attached there (MMIO. read more) */
 
 int main()
 {
@@ -281,7 +301,7 @@ int main()
 	std::ostringstream a;
 	a << file.rdbuf();
 	int i = 0;
-	for (i = 0; i < a.str().size() / 2; i++) {
+	for (i = 0; i < a.str().size() / 2; ++i) {
 		short b = ((short*) (a.str().data()))[i];
 		prog[i] = b;
 	}
@@ -289,13 +309,12 @@ int main()
 	cpu.load(prog, 51);
 	cpu.printprog();
 
-	for (int i = 0; i < PROGLEN; i++) {
+	for (int i = 0; i < PROGLEN; ++i) {
 		cpu.fetch();
-		if (cpu.inst == HLT) goto endin;
+		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
 	}
 
-endin:
 	return 0;
 }
