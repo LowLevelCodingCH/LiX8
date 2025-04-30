@@ -6,8 +6,7 @@
 
 using namespace std;
 
-enum reg
-{
+enum reg {
 	PC, // program counter
 	SP, // stack pointer
 
@@ -26,8 +25,7 @@ enum reg
 	F1,
 };
 
-enum inst
-{
+enum inst {
 	NOP,
 	CPY,
 	MOVM,
@@ -70,14 +68,11 @@ std::vector<std::string> split(std::string string, char delimiter)
 	std::string buffer;
 	std::vector<std::string> result;
 
-	for (char c : string)
-	{
-		if (c == delimiter)
-		{
+	for (char c : string) {
+		if (c == delimiter) {
 			result.push_back(buffer);
 			buffer.clear();
-		}
-		else
+		} else
 			buffer.push_back(c);
 	}
 
@@ -85,10 +80,9 @@ std::vector<std::string> split(std::string string, char delimiter)
 	return result;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	if (argc != 2)
-		exit(1);
+	if (argc != 2) exit(1);
 
 	std::ifstream file(argv[1]);
 	std::string line;
@@ -102,8 +96,7 @@ int main(int argc, char *argv[])
 
 	auto htoks = split(text.str(), ' ');
 
-	for (auto htok : htoks)
-	{
+	for (auto htok : htoks) {
 		if ("nop" == htok)
 			output.push_back((short) inst::NOP);
 		else if ("cpy" == htok)
@@ -178,20 +171,16 @@ int main(int argc, char *argv[])
 			output.push_back((short) reg::L7);
 		else if ("i0" == htok)
 			output.push_back((short) reg::I0);
-		else
-		{
-			try
-			{
+		else {
+			try {
 				output.push_back((short) std::stoi(htok));
-			}
-			catch (...)
-			{
+			} catch (...) {
 				output.push_back((short) 0);
 			}
 		}
 	}
 
 	std::ofstream ofile("a.bin");
-	ofile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
+	ofile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
 	ofile.close();
 }
