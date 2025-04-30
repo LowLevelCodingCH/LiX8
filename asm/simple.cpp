@@ -10,8 +10,8 @@
  */
 
 enum reg {
-	PC, // program counter
-	SP, // stack pointer
+	PC,
+	SP,
 
 	L0,
 	L1,
