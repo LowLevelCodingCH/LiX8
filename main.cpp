@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#define PROGLEN 51
+#define PROGLEN (9 * 3)
 #define PROGADR 0
 
 enum reg
@@ -21,7 +21,7 @@ enum reg
 	L6,
 	L7,
 
-	I0, // interrupt vector
+	I0,
 
 	F0, // unused
 	F1,
@@ -45,22 +45,22 @@ enum inst
 	PUSH,
 	POP,
 
-	CALL,
-	RCALL,
+	RBL,
 	RET,
 
 	CMP,
 
-	JMP,
-	JZ,
-	JL,
-	JM,
-	JNE,
+	B,
+	BIZ,
+	BL,
+	BIM,
+	BNZ,
+	BIL,
 
 	HLT,
 
-	INT,
-	RETI,
+	SWI,
+	IRET,
 
 	OUT,
 	IN,
@@ -75,7 +75,7 @@ std::string intoa(short i)
 	switch (i)
 	{
 		cr(NOP);
-		cr(INT);
+		cr(SWI);
 		cr(CPY);
 		cr(MOVM);
 		cr(MOV);
@@ -87,15 +87,15 @@ std::string intoa(short i)
 		cr(DIV);
 		cr(PUSH);
 		cr(POP);
-		cr(CALL);
+		cr(BL);
 		cr(RET);
-		cr(RETI);
+		cr(IRET);
 		cr(CMP);
-		cr(JMP);
-		cr(JZ);
-		cr(JL);
-		cr(JM);
-		cr(JNE);
+		cr(B);
+		cr(BIZ);
+		cr(BIM);
+		cr(BIL);
+		cr(BNZ);
 		cr(HLT);
 		cr(OUT);
 		cr(IN);
@@ -128,9 +128,9 @@ struct lix
 
 	void fetch()
 	{
-		this->inst = this->memory[PROGADR + this->registers[reg::PC]];
-		this->arg0 = this->memory[PROGADR + this->registers[reg::PC] + 1];
-		this->arg1 = this->memory[PROGADR + this->registers[reg::PC] + 2];
+		this->inst = this->memory[this->registers[reg::PC]];
+		this->arg0 = this->memory[this->registers[reg::PC] + 1];
+		this->arg1 = this->memory[this->registers[reg::PC] + 2];
 		this->registers[reg::PC] += 3;
 	}
 
@@ -165,12 +165,12 @@ struct lix
 				    this->memory[this->registers[reg::SP]];
 				this->registers[reg::SP]--;
 				break;
-			case inst::RCALL:
+			case inst::RBL:
 				this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 				this->registers[reg::SP]++;
 				this->registers[reg::PC] = this->registers[(reg) this->arg0];
 				break;
-			case inst::CALL:
+			case inst::BL:
 				this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 				this->registers[reg::SP]++;
 				this->registers[reg::PC] = this->arg0;
@@ -181,14 +181,14 @@ struct lix
 			case inst::CPY:
 				this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1];
 				break; // break out
-			case inst::JMP:
+			case inst::B:
 				this->registers[reg::PC] = this->arg0;
 				break; // break out
-			case inst::JNE:
+			case inst::BNZ:
 				if (this->registers[reg::F1] != 0)
 					this->registers[reg::PC] = this->arg0;
 				break; // break out
-			case inst::INT:
+			case inst::SWI:
 				this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 				this->registers[reg::SP]++;
 				this->memory[this->registers[reg::SP]] = this->registers[reg::F0];
@@ -197,28 +197,22 @@ struct lix
 				this->registers[reg::SP]++;
 				this->registers[reg::PC] =
 				    this->memory[this->registers[reg::I0] + this->arg0];
-				std::cout << "PC: " << this->registers[reg::PC]
-					  << " F0: " << this->registers[reg::F0]
-					  << " F1: " << this->registers[reg::F1] << std::endl;
 				break;
-			case inst::RETI:
+			case inst::IRET:
 				this->registers[reg::F1] = this->memory[this->registers[reg::SP] - 1];
 				this->registers[reg::F0] = this->memory[this->registers[reg::SP] - 2];
 				this->registers[reg::PC] = this->memory[this->registers[reg::SP] - 3];
 				this->registers[reg::SP] -= 3;
-				std::cout << "PC: " << this->registers[reg::PC]
-					  << " F0: " << this->registers[reg::F0]
-					  << " F1: " << this->registers[reg::F1] << std::endl;
 				break;
-			case inst::JZ:
+			case inst::BIZ:
 				if (this->registers[reg::F1] == 0)
 					this->registers[reg::PC] = this->arg0;
 				break; // break out
-			case inst::JM:
+			case inst::BIM:
 				if (this->registers[reg::F1] == 1)
 					this->registers[reg::PC] = this->arg0;
 				break; // break out
-			case inst::JL:
+			case inst::BIL:
 				if (this->registers[reg::F1] == 2)
 					this->registers[reg::PC] = this->arg0;
 				break; // break out
@@ -240,15 +234,15 @@ struct lix
 				this->registers[(reg) this->arg0]--;
 				break; // break out
 			case inst::ADD:
-				this->registers[(reg) this->arg1] = this->registers[(reg) this->arg1] +
+				this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1] +
 								    this->registers[(reg) this->arg0];
 				break; // break out
 			case inst::MUL:
-				this->registers[(reg) this->arg1] = this->registers[(reg) this->arg1] *
+				this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1] *
 								    this->registers[(reg) this->arg0];
 				break; // break out
 			case inst::SUB:
-				this->registers[(reg) this->arg1] = this->registers[(reg) this->arg1] -
+				this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1] -
 								    this->registers[(reg) this->arg0];
 				break; // break out
 			case inst::IN:
@@ -292,7 +286,7 @@ struct lix
 
 #define HW_SUP
 #undef HW_SUP
-#define SGA_ADR 0x20
+#define SGA_ADR 0x2000
 
 int main()
 {

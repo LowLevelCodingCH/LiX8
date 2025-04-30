@@ -20,7 +20,7 @@ enum reg
 	L6,
 	L7,
 
-	I0, // interrupt vector
+	I0,
 
 	F0,
 	F1,
@@ -44,22 +44,22 @@ enum inst
 	PUSH,
 	POP,
 
-	CALL,
-	RCALL,
+	RBL,
 	RET,
 
 	CMP,
 
-	JMP,
-	JZ,
-	JL,
-	JM,
-	JNE,
+	B,
+	BIZ,
+	BL,
+	BIM,
+	BNZ,
+	BIL,
 
 	HLT,
 
-	INT,
-	RETI,
+	SWI,
+	IRET,
 
 	OUT,
 	IN,
@@ -132,26 +132,26 @@ int main(int argc, char *argv[])
 			output.push_back((short) inst::POP);
 		else if ("ret" == htok)
 			output.push_back((short) inst::RET);
-		else if ("int" == htok)
-			output.push_back((short) inst::INT);
-		else if ("reti" == htok)
-			output.push_back((short) inst::RETI);
-		else if ("call" == htok)
-			output.push_back((short) inst::CALL);
-		else if ("rcall" == htok)
-			output.push_back((short) inst::RCALL);
+		else if ("swi" == htok)
+			output.push_back((short) inst::SWI);
+		else if ("iret" == htok)
+			output.push_back((short) inst::IRET);
+		else if ("bl" == htok)
+			output.push_back((short) inst::BL);
+		else if ("bil" == htok)
+			output.push_back((short) inst::BIL);
+		else if ("rbl" == htok)
+			output.push_back((short) inst::RBL);
 		else if ("cmp" == htok)
 			output.push_back((short) inst::CMP);
-		else if ("jmp" == htok)
-			output.push_back((short) inst::JMP);
-		else if ("jz" == htok)
-			output.push_back((short) inst::JZ);
-		else if ("jl" == htok)
-			output.push_back((short) inst::JL);
-		else if ("jm" == htok)
-			output.push_back((short) inst::JM);
-		else if ("jne" == htok)
-			output.push_back((short) inst::JNE);
+		else if ("b" == htok)
+			output.push_back((short) inst::B);
+		else if ("biz" == htok)
+			output.push_back((short) inst::BIZ);
+		else if ("bim" == htok)
+			output.push_back((short) inst::BIM);
+		else if ("bnz" == htok)
+			output.push_back((short) inst::BNZ);
 		else if ("hlt" == htok)
 			output.push_back((short) inst::HLT);
 		else if ("out" == htok)
