@@ -59,5 +59,8 @@
     "variant": "cpp",
     "vector": "cpp",
     "algorithm": "cpp"
-  }
+},
+"[cpp]": {
+	"editor.defaultFormatter": "ms-vscode.cpptools"
+}
 }
