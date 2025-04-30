@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#define PROGLEN 12
+#define PROGLEN 51
 #define PROGADR 0
 
 enum reg
@@ -23,7 +23,7 @@ enum reg
 
 	I0, // interrupt vector
 
-	F0,
+	F0, // unused
 	F1,
 };
 
@@ -31,9 +31,9 @@ enum inst
 {
 	NOP,
 	CPY,
-	MOV,
+	MOVM,
 	LOD,
-	MOVI,
+	MOV,
 	INC,
 	DEC,
 
@@ -70,15 +70,15 @@ enum inst
 	case I:                                                                                       \
 		return #I
 
-std::string intoa(char i)
+std::string intoa(short i)
 {
 	switch (i)
 	{
 		cr(NOP);
 		cr(INT);
 		cr(CPY);
+		cr(MOVM);
 		cr(MOV);
-		cr(MOVI);
 		cr(INC);
 		cr(DEC);
 		cr(ADD);
@@ -122,7 +122,7 @@ struct lix
 
 	void printinst()
 	{
-		std::cout << intoa(this->inst) << ", " << (int) this->arg0 << ", " << (int) this->arg1
+		std::cout << intoa(this->inst) << " " << (int) this->arg0 << ", " << (int) this->arg1
 			  << std::endl;
 	}
 
@@ -222,7 +222,7 @@ struct lix
 				if (this->registers[reg::F1] == 2)
 					this->registers[reg::PC] = this->arg0;
 				break; // break out
-			case inst::MOV:
+			case inst::MOVM:
 				this->memory[this->registers[(reg) this->arg0]] =
 				    this->registers[(reg) this->arg1];
 				break; // break out
@@ -230,7 +230,7 @@ struct lix
 				this->registers[(reg) this->arg1] =
 				    this->memory[this->registers[(reg) this->arg0]];
 				break;
-			case inst::MOVI:
+			case inst::MOV:
 				this->registers[(reg) this->arg0] = this->arg1;
 				break; // break out
 			case inst::INC:
@@ -240,16 +240,16 @@ struct lix
 				this->registers[(reg) this->arg0]--;
 				break; // break out
 			case inst::ADD:
-				this->registers[reg::F0] = this->registers[(reg) this->arg1] +
-							   this->registers[(reg) this->arg0];
+				this->registers[(reg) this->arg1] = this->registers[(reg) this->arg1] +
+								    this->registers[(reg) this->arg0];
 				break; // break out
 			case inst::MUL:
-				this->registers[reg::F0] = this->registers[(reg) this->arg1] *
-							   this->registers[(reg) this->arg0];
+				this->registers[(reg) this->arg1] = this->registers[(reg) this->arg1] *
+								    this->registers[(reg) this->arg0];
 				break; // break out
 			case inst::SUB:
-				this->registers[reg::F0] = this->registers[(reg) this->arg1] -
-							   this->registers[(reg) this->arg0];
+				this->registers[(reg) this->arg1] = this->registers[(reg) this->arg1] -
+								    this->registers[(reg) this->arg0];
 				break; // break out
 			case inst::IN:
 				break; // break out
@@ -296,27 +296,8 @@ struct lix
 
 int main()
 {
-	lix cpu;
+	lix cpu = {0};
 	cpu.init();
-
-	cpu.memory[PROGADR + 0] = MOVI; // state: l0 = 3, nothing else changes
-	cpu.memory[PROGADR + 1] = reg::L0;
-	cpu.memory[PROGADR + 2] = 3;
-
-	cpu.memory[PROGADR + 3] = CALL; // state: l0 = 3, mem[pc] = pc + 3 (6)
-	cpu.memory[PROGADR + 4] = 6;
-	cpu.memory[PROGADR + 5] = 0;
-
-	cpu.memory[PROGADR + 6] = ADD; // l0 = 3, l7 = 3 + l1, mem[pc] = 6
-	cpu.memory[PROGADR + 7] = reg::L0;
-	cpu.memory[PROGADR + 8] = reg::L1;
-
-	cpu.memory[PROGADR + 9] = RET; // l0 = 3, l7 = 3 + l1, mem[pc] = 0
-	cpu.memory[PROGADR + 10] = 0;
-	cpu.memory[PROGADR + 11] = 0;
-
-#define target L1
-#define counter L0
 
 	short prog[101] = {0};
 
@@ -330,7 +311,7 @@ int main()
 		prog[i] = b;
 	}
 
-	cpu.load(prog, 30);
+	cpu.load(prog, 51);
 	cpu.printprog();
 
 	for (int i = 0; i < PROGLEN; i++)
@@ -340,19 +321,8 @@ int main()
 			goto endin;
 		cpu.execute();
 		cpu.printinst();
-		std::cout << "L0: " << (int) cpu.registers[reg::L0] << "\n";
-		std::cout << "L1: " << (int) cpu.registers[reg::L1] << "\n";
-		std::cout << "F0: " << (int) cpu.registers[reg::F0] << "\n";
-		std::cout << "PC: " << (int) cpu.registers[reg::PC] << "\n";
-
-		std::cout << "-----------------------------------------------\n";
 	}
 
 endin:
-	std::cout << "L0: " << (int) cpu.registers[reg::L0] << "\n";
-	std::cout << "L1: " << (int) cpu.registers[reg::L1] << "\n";
-	std::cout << "F0: " << (int) cpu.registers[reg::F0] << "\n";
-	std::cout << "-----------------------------------------------\n";
-
 	return 0;
 }

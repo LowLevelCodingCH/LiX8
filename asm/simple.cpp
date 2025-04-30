@@ -30,9 +30,9 @@ enum inst
 {
 	NOP,
 	CPY,
-	MOV,
+	MOVM,
 	LOD,
-	MOVI,
+	MOV,
 	INC,
 	DEC,
 
@@ -108,10 +108,10 @@ int main(int argc, char *argv[])
 			output.push_back((short) inst::NOP);
 		else if ("cpy" == htok)
 			output.push_back((short) inst::CPY);
+		else if ("movm" == htok)
+			output.push_back((short) inst::MOVM);
 		else if ("mov" == htok)
 			output.push_back((short) inst::MOV);
-		else if ("movi" == htok)
-			output.push_back((short) inst::MOVI);
 		else if ("lod" == htok)
 			output.push_back((short) inst::LOD);
 		else if ("inc" == htok)
