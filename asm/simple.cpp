@@ -9,7 +9,7 @@ using namespace std;
 enum reg {
 	PC, // program counter
 	SP, // stack pointer
-    
+
 	L0,
 	L1,
 	L2,
@@ -18,14 +18,14 @@ enum reg {
 	L5,
 	L6,
 	L7,
-    
+
 	I0, // interrupt vector
-    
+
 	F0,
 	F1,
-    };
-    
-    enum inst {
+};
+
+enum inst {
 	NOP,
 	CPY,
 	MOV,
@@ -33,35 +33,35 @@ enum reg {
 	MOVI,
 	INC,
 	DEC,
-    
+
 	ADD,
 	SUB,
 	MUL,
 	DIV,
-    
+
 	PUSH,
 	POP,
-    
+
 	CALL,
 	RCALL,
 	RET,
-    
+
 	CMP,
-    
+
 	JMP,
 	JZ,
 	JL,
 	JM,
 	JNE,
-    
+
 	HLT,
-    
+
 	INT,
 	RETI,
-    
+
 	OUT,
 	IN,
-    };
+};
 
 std::vector<std::string> split(std::string string, char delimiter)
 {

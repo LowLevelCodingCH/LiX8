@@ -137,12 +137,12 @@ struct lix {
 	    case inst::HLT: exit(0);
 	    case inst::PUSH: this->memory[this->registers[reg::SP]] = this->registers[(reg)this->arg0]; this->registers[reg::SP]++; break;
 	    case inst::POP: this->registers[(reg)this->arg0] = this->memory[this->registers[reg::SP]]; this->registers[reg::SP]--; break;
-	    case inst::RCALL: 
+	    case inst::RCALL:
 			    this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 			    this->registers[reg::SP]++;
 			    this->registers[reg::PC] = this->registers[(reg)this->arg0];
 			    break;
-	    case inst::CALL: 
+	    case inst::CALL:
 			    this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 			    this->registers[reg::SP]++;
 			    this->registers[reg::PC] = this->arg0;
@@ -196,7 +196,7 @@ struct lix {
         for(int i = 0; i < 13; i++)
             this->registers[i] = 0;
     }
-    
+
     void init() {
 	this->memory = (unsigned short*)&(this->rmemory[0]);
         this->clearmem();
@@ -227,11 +227,11 @@ int main() {
     cpu.memory[PROGADR+3]  = CALL; // state: l0 = 3, mem[pc] = pc + 3 (6)
     cpu.memory[PROGADR+4]  = 6;
     cpu.memory[PROGADR+5]  = 0;
-    
+
     cpu.memory[PROGADR+6]  = ADD; // l0 = 3, l7 = 3 + l1, mem[pc] = 6
     cpu.memory[PROGADR+7]  = reg::L0;
     cpu.memory[PROGADR+8]  = reg::L1;
-    
+
     cpu.memory[PROGADR+9]  = RET; // l0 = 3, l7 = 3 + l1, mem[pc] = 0
     cpu.memory[PROGADR+10] = 0;
     cpu.memory[PROGADR+11] = 0;

@@ -1,4 +1,16 @@
 {
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "always",
+    "source.fixAll": "always"
+  },
+  "editor.insertSpaces": false,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 8,
+  "editor.smoothScrolling": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "xaver.clang-format",
   "files.associations": {
     "__bit_reference": "cpp",
     "__hash_table": "cpp",
