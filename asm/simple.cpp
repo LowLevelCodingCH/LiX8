@@ -7,56 +7,61 @@
 using namespace std;
 
 enum reg {
-    PC, // program counter
-    SP, // stack pointer
-
-    L0,
-    L1,
-    L2,
-    L3,
-    L4,
-    L5,
-    L6,
-    L7,
-
-    F0,
-    F1,
-};
-
-enum inst {
-    NOP,
-    CPY,
-    MOV,
-    LOD,
-    MOVI,
-    INC,
-    DEC,
-
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-
-    PUSH,
-    POP,
-
-    CALL,
-    RCALL,
-    RET,
-
-    CMP,
-
-    JMP,
-    JZ,
-    JL,
-    JM,
-    JNE,
-
-    HLT,
-
-    OUT,
-    IN,
-};
+	PC, // program counter
+	SP, // stack pointer
+    
+	L0,
+	L1,
+	L2,
+	L3,
+	L4,
+	L5,
+	L6,
+	L7,
+    
+	I0, // interrupt vector
+    
+	F0,
+	F1,
+    };
+    
+    enum inst {
+	NOP,
+	CPY,
+	MOV,
+	LOD,
+	MOVI,
+	INC,
+	DEC,
+    
+	ADD,
+	SUB,
+	MUL,
+	DIV,
+    
+	PUSH,
+	POP,
+    
+	CALL,
+	RCALL,
+	RET,
+    
+	CMP,
+    
+	JMP,
+	JZ,
+	JL,
+	JM,
+	JNE,
+    
+	HLT,
+    
+	INT,
+	RETI,
+    
+	OUT,
+	IN,
+    };
 
 std::vector<std::string> split(std::string string, char delimiter)
 {
@@ -121,6 +126,10 @@ int main(int argc, char *argv[])
 			output.push_back((short)inst::POP);
 		else if("ret" == htok)
 			output.push_back((short)inst::RET);
+		else if("int" == htok)
+			output.push_back((short)inst::INT);
+		else if("reti" == htok)
+			output.push_back((short)inst::RETI);
 		else if("call" == htok)
 			output.push_back((short)inst::CALL);
 		else if("rcall" == htok)
@@ -161,6 +170,8 @@ int main(int argc, char *argv[])
 			output.push_back((short)reg::L6);
 		else if("l7" == htok || "r7" == htok)
 			output.push_back((short)reg::L7);
+		else if("i0" == htok)
+			output.push_back((short)reg::I0);
 		else {
 			try {
 				output.push_back((short)std::stoi(htok));

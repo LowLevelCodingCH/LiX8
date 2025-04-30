@@ -4,8 +4,8 @@
 #include <sstream>
 #include <cmath>
 
-#define PROGLEN 85
-#define PROGADR 8
+#define PROGLEN 12
+#define PROGADR 0
 
 enum reg {
     PC, // program counter
@@ -19,6 +19,8 @@ enum reg {
     L5,
     L6,
     L7,
+
+    I0, // interrupt vector
 
     F0,
     F1,
@@ -55,6 +57,9 @@ enum inst {
 
     HLT,
 
+    INT,
+    RETI,
+
     OUT,
     IN,
 };
@@ -65,6 +70,7 @@ std::string intoa(char i)
 {
 	switch(i) {
 		cr(NOP);
+		cr(INT);
 		cr(CPY);
 		cr(MOV);
 		cr(MOVI);
@@ -78,6 +84,7 @@ std::string intoa(char i)
 		cr(POP);
 		cr(CALL);
 		cr(RET);
+		cr(RETI);
 		cr(CMP);
 		cr(JMP);
 		cr(JZ);
@@ -92,7 +99,7 @@ std::string intoa(char i)
 }
 
 struct lix {
-    std::uint16_t registers[12];
+    std::uint16_t registers[13];
     std::uint16_t inst;
     std::uint16_t arg0;
     std::uint16_t arg1;
@@ -146,7 +153,24 @@ struct lix {
             case inst::CPY: this->registers[(reg)this->arg0]                           = this->registers[(reg)this->arg1];                                    break; // break out
             case inst::JMP: this->registers[reg::PC]                                   = this->arg0;                                                          break; // break out
             case inst::JNE: if(this->registers[reg::F1] != 0) this->registers[reg::PC] = this->arg0;                                                          break; // break out
-            case inst::JZ:  if(this->registers[reg::F1] == 0) this->registers[reg::PC] = this->arg0;                                                          break; // break out
+            case inst::INT:
+	    		    this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
+			    this->registers[reg::SP]++;
+			    this->memory[this->registers[reg::SP]] = this->registers[reg::F0];
+			    this->registers[reg::SP]++;
+			    this->memory[this->registers[reg::SP]] = this->registers[reg::F1];
+			    this->registers[reg::SP]++;
+			    this->registers[reg::PC] = this->memory[this->registers[reg::I0] + this->arg0];
+			    std::cout << "PC: " << this->registers[reg::PC] << " F0: " << this->registers[reg::F0] << " F1: " << this->registers[reg::F1] << std::endl;
+			    break;
+	    case inst::RETI:
+			    this->registers[reg::F1] = this->memory[this->registers[reg::SP] - 1];
+			    this->registers[reg::F0] = this->memory[this->registers[reg::SP] - 2];
+			    this->registers[reg::PC] = this->memory[this->registers[reg::SP] - 3];
+			    this->registers[reg::SP] -= 3;
+			    std::cout << "PC: " << this->registers[reg::PC] << " F0: " << this->registers[reg::F0] << " F1: " << this->registers[reg::F1] << std::endl;
+			    break;
+	    case inst::JZ:  if(this->registers[reg::F1] == 0) this->registers[reg::PC] = this->arg0;                                                          break; // break out
             case inst::JM:  if(this->registers[reg::F1] == 1) this->registers[reg::PC] = this->arg0;                                                          break; // break out
             case inst::JL:  if(this->registers[reg::F1] == 2) this->registers[reg::PC] = this->arg0;                                                          break; // break out
 	    case inst::MOV: this->memory[this->registers[(reg)this->arg0]]             = this->registers[(reg)this->arg1];                                    break; // break out
@@ -169,7 +193,7 @@ struct lix {
     }
 
     void clearreg() {
-        for(int i = 0; i < 12; i++)
+        for(int i = 0; i < 13; i++)
             this->registers[i] = 0;
     }
     
@@ -235,13 +259,17 @@ for(i = 0; i < a.str().size() / 2; i++) {
         cpu.execute();
 	cpu.printinst();
 	std::cout << "L0: " << (int)cpu.registers[reg::L0] << "\n";
-	std::cout << "F1: " << (int)cpu.registers[reg::F1] << "\n";
+    std::cout << "L1: " << (int)cpu.registers[reg::L1] << "\n";
+	std::cout << "F0: " << (int)cpu.registers[reg::F0] << "\n";
+	std::cout << "PC: " << (int)cpu.registers[reg::PC] << "\n";
+
 	std::cout << "-----------------------------------------------\n";
     }
 
 endin:
 	std::cout << "L0: " << (int)cpu.registers[reg::L0] << "\n";
-	std::cout << "F1: " << (int)cpu.registers[reg::F1] << "\n";
+    std::cout << "L1: " << (int)cpu.registers[reg::L1] << "\n";
+	std::cout << "F0: " << (int)cpu.registers[reg::F0] << "\n";
 	std::cout << "-----------------------------------------------\n";
 
     return 0;
