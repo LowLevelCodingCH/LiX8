@@ -66,5 +66,6 @@
 },
 "[cpp]": {
 	"editor.defaultFormatter": "ms-vscode.cpptools"
-}
+},
+"mesonbuild.configureOnOpen": true
 }

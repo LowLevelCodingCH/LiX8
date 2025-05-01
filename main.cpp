@@ -12,10 +12,11 @@
 #define PROGLEN 100
 #define PROGADR 0
 
-enum reg {
-	PC, // program counter
-	SP, // stack pointer
+enum excep { INV_OPCODE, DIV_BY_ZERO, DOUBLE_FLT, PROT_FLT };
 
+enum reg {
+	PC,
+	SP,
 	L0,
 	L1,
 	L2,
@@ -24,47 +25,37 @@ enum reg {
 	L5,
 	L6,
 	L7,
-
-	I0,
-
-	F0, // unused
-	F1,
+	LR,
+	S0,
+	S1,
 };
 
 enum inst {
 	NOP,
 	CPY,
-	MOVM,
-	LOD,
+	STR,
+	LDR,
 	MOV,
 	INC,
 	DEC,
-
 	ADD,
 	SUB,
 	MUL,
 	DIV,
-
 	PUSH,
 	POP,
-
 	RBL,
 	RET,
-
 	CMP,
-
 	B,
 	BIZ,
 	BL,
 	BIM,
 	BNZ,
 	BIL,
-
 	HLT,
-
-	SWI,
+	SVC,
 	IRET,
-
 	OUT,
 	IN,
 };
@@ -80,9 +71,9 @@ std::string intoa(short i)
 {
 	switch (i) {
 		cr(NOP);
-		cr(SWI);
+		cr(SVC);
 		cr(CPY);
-		cr(MOVM);
+		cr(STR);
 		cr(MOV);
 		cr(INC);
 		cr(DEC);
@@ -205,11 +196,11 @@ struct lix {
 		switch (this->inst) {
 		case inst::CMP:
 			if (this->registers[(reg) this->arg0] > this->registers[(reg) this->arg1])
-				this->registers[reg::F1] = 1;
+				this->registers[reg::S1] = 1;
 			if (this->registers[(reg) this->arg0] < this->registers[(reg) this->arg1])
-				this->registers[reg::F1] = 2;
+				this->registers[reg::S1] = 2;
 			if (this->registers[(reg) this->arg0] == this->registers[(reg) this->arg1])
-				this->registers[reg::F1] = 0;
+				this->registers[reg::S1] = 0;
 			break; // break out
 		case inst::NOP:
 			break; // break out
@@ -243,37 +234,37 @@ struct lix {
 			this->registers[reg::PC] = this->arg0;
 			break; // break out
 		case inst::BNZ:
-			if (this->registers[reg::F1] != 0) this->registers[reg::PC] = this->arg0;
+			if (this->registers[reg::S1] != 0) this->registers[reg::PC] = this->arg0;
 			break; // break out
-		case inst::SWI:
+		case inst::SVC:
 			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::F0];
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
 			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::F1];
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
 			this->registers[reg::SP]++;
-			this->registers[reg::PC] = this->memory[this->registers[reg::I0] + this->arg0];
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + this->arg0];
 			break;
 		case inst::IRET:
-			this->registers[reg::F1] = this->memory[this->registers[reg::SP] - 1];
-			this->registers[reg::F0] = this->memory[this->registers[reg::SP] - 2];
+			this->registers[reg::S1] = this->memory[this->registers[reg::SP] - 1];
+			this->registers[reg::S0] = this->memory[this->registers[reg::SP] - 2];
 			this->registers[reg::PC] = this->memory[this->registers[reg::SP] - 3];
 			this->registers[reg::SP] -= 3;
 			break;
 		case inst::BIZ:
-			if (this->registers[reg::F1] == 0) this->registers[reg::PC] = this->arg0;
+			if (this->registers[reg::S1] == 0) this->registers[reg::PC] = this->arg0;
 			break; // break out
 		case inst::BIM:
-			if (this->registers[reg::F1] == 1) this->registers[reg::PC] = this->arg0;
+			if (this->registers[reg::S1] == 1) this->registers[reg::PC] = this->arg0;
 			break; // break out
 		case inst::BIL:
-			if (this->registers[reg::F1] == 2) this->registers[reg::PC] = this->arg0;
+			if (this->registers[reg::S1] == 2) this->registers[reg::PC] = this->arg0;
 			break; // break out
-		case inst::MOVM:
+		case inst::STR:
 			this->rmemory[this->registers[(reg) this->arg0]]
 			    = this->registers[(reg) this->arg1];
 			break; // break out
-		case inst::LOD:
+		case inst::LDR:
 			this->registers[(reg) this->arg1]
 			    = this->rmemory[this->registers[(reg) this->arg0]];
 			break;
@@ -303,7 +294,17 @@ struct lix {
 		case inst::OUT:
 			break; // break out
 		default:
-			break; // break out
+			excep cexcp			       = excep::INV_OPCODE;
+			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
+			this->registers[reg::SP]++;
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
+			this->registers[reg::SP]++;
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
+			this->registers[reg::SP]++;
+			if (this->memory[this->registers[reg::LR] + cexcp] == 0)
+				cexcp = excep::DOUBLE_FLT;
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + cexcp];
+			break;
 		}
 	}
 
@@ -363,6 +364,7 @@ int main()
 		cpu.fetch();
 		if (cpu.inst == HLT) break;
 		cpu.execute();
+		cpu.printinst();
 	}
 
 	return 0;

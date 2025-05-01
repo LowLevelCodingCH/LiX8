@@ -22,17 +22,17 @@ enum reg {
 	L6,
 	L7,
 
-	I0,
+	LR,
 
-	F0,
-	F1,
+	S0,
+	S1,
 };
 
 enum inst {
 	NOP,
 	CPY,
-	MOVM,
-	LOD,
+	STR,
+	LDR,
 	MOV,
 	INC,
 	DEC,
@@ -59,7 +59,7 @@ enum inst {
 
 	HLT,
 
-	SWI,
+	SVC,
 	IRET,
 
 	OUT,
@@ -80,12 +80,12 @@ short get_inst(std::string token)
 		return NOP;
 	else if ("cpy" == token)
 		return CPY;
-	else if ("movm" == token)
-		return MOVM;
+	else if ("str" == token)
+		return STR;
 	else if ("mov" == token)
 		return MOV;
-	else if ("lod" == token)
-		return LOD;
+	else if ("ldr" == token)
+		return LDR;
 	else if ("inc" == token)
 		return INC;
 	else if ("dec" == token)
@@ -104,8 +104,8 @@ short get_inst(std::string token)
 		return POP;
 	else if ("ret" == token)
 		return RET;
-	else if ("swi" == token)
-		return SWI;
+	else if ("svc" == token)
+		return SVC;
 	else if ("iret" == token)
 		return IRET;
 	else if ("bl" == token)
@@ -148,8 +148,8 @@ short get_inst(std::string token)
 		return L6;
 	else if ("l7" == token || "r7" == token)
 		return L7;
-	else if ("i0" == token)
-		return I0;
+	else if ("lr" == token)
+		return LR;
 	else if ("" == token)
 		return 0;
 	else {
