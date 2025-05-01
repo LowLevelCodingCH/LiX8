@@ -62,6 +62,7 @@ enum inst {
 
 	SWI,
 	SVC,
+	SVCSTR,
 	IRET,
 
 	OUT,
@@ -108,6 +109,8 @@ short get_inst(std::string token)
 		return RET;
 	else if ("svc" == token)
 		return SVC;
+	else if ("svcstr" == token)
+		return SVCSTR;
 	else if ("iret" == token)
 		return IRET;
 	else if ("bl" == token)

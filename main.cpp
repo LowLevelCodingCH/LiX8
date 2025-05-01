@@ -61,6 +61,7 @@ enum inst {
 	HLT,
 	SWI,
 	SVC,
+	SVCSTR,
 	IRET,
 	OUT,
 	IN,
@@ -78,6 +79,7 @@ std::string intoa(short i)
 	switch (i) {
 		cr(NOP);
 		cr(SVC);
+		cr(SVCSTR);
 		cr(CPY);
 		cr(STR);
 		cr(MOV);
@@ -203,6 +205,9 @@ struct lix {
 		excep cexcp;
 		if (this->registers[reg::S2] == prot::PROT_HI_0) {
 			switch (this->inst) {
+			case inst::SVCSTR:
+				this->registers[reg::LR] = this->arg0;
+				goto dfe;
 			case inst::SWI:
 				this->registers[reg::S2] = this->arg0;
 				goto dfe;
@@ -219,6 +224,19 @@ struct lix {
 			}
 		} else { // see if low priv user tries to access high priv func
 			switch (this->inst) {
+			case inst::SVCSTR:
+				cexcp				       = excep::PROT_FLT;
+				this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
+				this->registers[reg::SP]++;
+				this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
+				this->registers[reg::SP]++;
+				this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
+				this->registers[reg::SP]++;
+				if (this->memory[this->registers[reg::LR] + cexcp] == 0)
+					cexcp = excep::DOUBLE_FLT;
+				this->registers[reg::PC]
+				    = this->memory[this->registers[reg::LR] + cexcp];
+				goto dfe;
 			case inst::SWI:
 				cexcp				       = excep::PROT_FLT;
 				this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
@@ -346,7 +364,8 @@ struct lix {
 			    = this->rmemory[this->registers[(reg) this->arg0]];
 			break;
 		case inst::MOV:
-			this->registers[(reg) this->arg0] = this->arg1;
+			if (this->arg0 != reg::PC && this->arg0 != reg::LR)
+				this->registers[(reg) this->arg0] = this->arg1;
 			break;
 		case inst::INC:
 			this->registers[(reg) this->arg0]++;
