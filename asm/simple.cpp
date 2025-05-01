@@ -26,6 +26,7 @@ enum reg {
 
 	S0,
 	S1,
+	S2,
 };
 
 enum inst {
