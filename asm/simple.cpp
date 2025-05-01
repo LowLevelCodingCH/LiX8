@@ -164,13 +164,20 @@ short get_inst(std::string token)
 }
 } // namespace lixasm
 
-std::vector<std::string> split(std::string string, char delimiter)
+bool instr(char c, char* s)
+{
+	for (int i = 0; i < strlen(s); i++)
+		if (c == s[i]) return true;
+	return false;
+}
+
+std::vector<std::string> split(std::string string, char* delimiter)
 {
 	std::string buffer;
 	std::vector<std::string> result;
 
 	for (char c : string) {
-		if (c == delimiter) {
+		if (instr(c, delimiter)) {
 			result.push_back(buffer);
 			buffer.clear();
 		} else
@@ -195,7 +202,7 @@ int main(int argc, char* argv[])
 
 	file.close();
 
-	auto tokens = split(text.str(), ' ');
+	auto tokens = split(text.str(), " \t,.");
 
 	for (auto token : tokens)
 		output.push_back(lixasm::get_inst(token));
