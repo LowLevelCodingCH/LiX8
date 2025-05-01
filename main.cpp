@@ -365,7 +365,8 @@ struct lix {
 			    = this->rmemory[this->registers[(reg) this->arg0]];
 			break;
 		case inst::MOV:
-			this->registers[(reg) this->arg0] = this->arg1;
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR)
+				this->registers[(reg) this->arg0] = this->arg1;
 			break;
 		case inst::INC:
 			this->registers[(reg) this->arg0]++;
