@@ -137,6 +137,8 @@ short get_inst(std::string token)
 		return OUT;
 	else if ("in" == token)
 		return IN;
+	else if ("pc" == token)
+		return PC;
 	else if ("sp" == token)
 		return SP;
 	else if ("l0" == token || "r0" == token)
