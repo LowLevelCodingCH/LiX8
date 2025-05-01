@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-/*
+/**
  * @author LowLevelCodingCH (Alex), 2025
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
  */
@@ -72,7 +72,7 @@ enum inst {
 #define cr(I)                                                                                         \
 	case I:                                                                                       \
 		return #I
-/*
+/**
  * @brief Returns string name of an instruction
  * @param Instruction to return the name of
  */
@@ -109,6 +109,56 @@ std::string intoa(short i)
 	}
 }
 
+/**
+ * @struct lix
+ * @brief A structure representing a simple virtual machine with registers, memory, and instruction
+ * execution capabilities.
+ *
+ * @var lix::registers
+ * Array of 13 16-bit registers used for general-purpose and special-purpose operations.
+ *
+ * @var lix::inst
+ * The current instruction to be executed.
+ *
+ * @var lix::arg0
+ * The first operand of the current instruction.
+ *
+ * @var lix::arg1
+ * The second operand of the current instruction.
+ *
+ * @var lix::rmemory
+ * A raw memory buffer of 16 KB (16384 bytes).
+ *
+ * @var lix::memory
+ * A pointer to lix::rmemory but it is 16 bits per entry because PC increments in words not bytes.
+ *
+ * @fn lix::printprog()
+ * @brief Prints the program loaded in memory starting from the program address.
+ *
+ * @fn lix::printinst()
+ * @brief Prints the current instruction and its operands in a readable format.
+ *
+ * @fn lix::fetch()
+ * @brief Fetches the next instruction and its operands from memory and updates the program counter
+ * (PC).
+ *
+ * @fn lix::execute()
+ * @brief Executes the current instruction.
+ *
+ * @fn lix::clearmem()
+ * @brief Clears the memory by setting all memory locations to zero.
+ *
+ * @fn lix::clearreg()
+ * @brief Clears all registers by setting them to zero.
+ *
+ * @fn lix::init()
+ * @brief Clears the memory and registers.
+ *
+ * @fn lix::load(short* insts, int len)
+ * @brief Loads a program (array of instructions) into memory at the program address.
+ * @param insts Pointer to the array of instructions to load.
+ * @param len The number of instructions to load.
+ */
 struct lix {
 	std::uint16_t registers[13];
 	std::uint16_t inst;
@@ -117,7 +167,7 @@ struct lix {
 	std::uint8_t rmemory[16384]; // Not included by def
 	std::uint16_t* memory;
 
-	/*
+	/**
 	 * @brief Prints a program
 	 */
 	void printprog()
@@ -127,7 +177,7 @@ struct lix {
 		std::cout << std::endl;
 	}
 
-	/*
+	/**
 	 * @brief Prints an instruction
 	 */
 	void printinst()
@@ -136,7 +186,7 @@ struct lix {
 			  << std::endl;
 	}
 
-	/*
+	/**
 	 * @brief Fetches an instruction
 	 */
 	void fetch()
@@ -147,7 +197,7 @@ struct lix {
 		this->registers[reg::PC] += 3;
 	}
 
-	/*
+	/**
 	 * @brief Executes the instruction in inst, arg0 and arg1
 	 */
 	void execute()
@@ -295,7 +345,7 @@ int main()
 	lix cpu = { 0 };
 	cpu.init();
 
-	short prog[101] = { 0 };
+	short prog[0x1000] = { 0 };
 
 	std::ifstream file("a.bin");
 	std::ostringstream a;
@@ -306,7 +356,7 @@ int main()
 		prog[i] = b;
 	}
 
-	cpu.load(prog, 51);
+	cpu.load(prog, 0x1000);
 	cpu.printprog();
 
 	for (int i = 0; i < PROGLEN; ++i) {

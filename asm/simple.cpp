@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-/*
+/**
  * @author LowLevelCodingCH (Alex), 2025
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
  */
@@ -68,93 +68,97 @@ enum inst {
 
 namespace lixasm
 {
-/*
+/**
  * @param Name of the token
  * @return number to be put rawly into the executable file
  * @note uses yoda notation (lit == var) instead of "normal" notation (var == lit),
  *       To prevent this: (var = lit) from accidentally happening
  */
-short get_inst(std::string htok)
+short get_inst(std::string token)
 {
-	if ("nop" == htok)
-		return (short) inst::NOP;
-	else if ("cpy" == htok)
-		return (short) inst::CPY;
-	else if ("movm" == htok)
-		return (short) inst::MOVM;
-	else if ("mov" == htok)
-		return (short) inst::MOV;
-	else if ("lod" == htok)
-		return (short) inst::LOD;
-	else if ("inc" == htok)
-		return (short) inst::INC;
-	else if ("dec" == htok)
-		return (short) inst::DEC;
-	else if ("add" == htok)
-		return (short) inst::ADD;
-	else if ("sub" == htok)
-		return (short) inst::SUB;
-	else if ("mul" == htok)
-		return (short) inst::MUL;
-	else if ("div" == htok)
-		return (short) inst::DIV;
-	else if ("push" == htok)
-		return (short) inst::PUSH;
-	else if ("pop" == htok)
-		return (short) inst::POP;
-	else if ("ret" == htok)
-		return (short) inst::RET;
-	else if ("swi" == htok)
-		return (short) inst::SWI;
-	else if ("iret" == htok)
-		return (short) inst::IRET;
-	else if ("bl" == htok)
-		return (short) inst::BL;
-	else if ("bil" == htok)
-		return (short) inst::BIL;
-	else if ("rbl" == htok)
-		return (short) inst::RBL;
-	else if ("cmp" == htok)
-		return (short) inst::CMP;
-	else if ("b" == htok)
-		return (short) inst::B;
-	else if ("biz" == htok)
-		return (short) inst::BIZ;
-	else if ("bim" == htok)
-		return (short) inst::BIM;
-	else if ("bnz" == htok)
-		return (short) inst::BNZ;
-	else if ("hlt" == htok)
-		return (short) inst::HLT;
-	else if ("out" == htok)
-		return (short) inst::OUT;
-	else if ("in" == htok)
-		return (short) inst::IN;
-	else if ("sp" == htok)
-		return (short) reg::SP;
-	else if ("l0" == htok || "r0" == htok)
-		return (short) reg::L0;
-	else if ("l1" == htok || "r1" == htok)
-		return (short) reg::L1;
-	else if ("l2" == htok || "r2" == htok)
-		return (short) reg::L2;
-	else if ("l3" == htok || "r3" == htok)
-		return (short) reg::L3;
-	else if ("l4" == htok || "r4" == htok)
-		return (short) reg::L4;
-	else if ("l5" == htok || "r5" == htok)
-		return (short) reg::L5;
-	else if ("l6" == htok || "r6" == htok)
-		return (short) reg::L6;
-	else if ("l7" == htok || "r7" == htok)
-		return (short) reg::L7;
-	else if ("i0" == htok)
-		return (short) reg::I0;
+	if ("nop" == token)
+		return NOP;
+	else if ("cpy" == token)
+		return CPY;
+	else if ("movm" == token)
+		return MOVM;
+	else if ("mov" == token)
+		return MOV;
+	else if ("lod" == token)
+		return LOD;
+	else if ("inc" == token)
+		return INC;
+	else if ("dec" == token)
+		return DEC;
+	else if ("add" == token)
+		return ADD;
+	else if ("sub" == token)
+		return SUB;
+	else if ("mul" == token)
+		return MUL;
+	else if ("div" == token)
+		return DIV;
+	else if ("push" == token)
+		return PUSH;
+	else if ("pop" == token)
+		return POP;
+	else if ("ret" == token)
+		return RET;
+	else if ("swi" == token)
+		return SWI;
+	else if ("iret" == token)
+		return IRET;
+	else if ("bl" == token)
+		return BL;
+	else if ("bil" == token)
+		return BIL;
+	else if ("rbl" == token)
+		return RBL;
+	else if ("cmp" == token)
+		return CMP;
+	else if ("b" == token)
+		return B;
+	else if ("biz" == token)
+		return BIZ;
+	else if ("bim" == token)
+		return BIM;
+	else if ("bnz" == token)
+		return BNZ;
+	else if ("hlt" == token)
+		return HLT;
+	else if ("out" == token)
+		return OUT;
+	else if ("in" == token)
+		return IN;
+	else if ("sp" == token)
+		return SP;
+	else if ("l0" == token || "r0" == token)
+		return L0;
+	else if ("l1" == token || "r1" == token)
+		return L1;
+	else if ("l2" == token || "r2" == token)
+		return L2;
+	else if ("l3" == token || "r3" == token)
+		return L3;
+	else if ("l4" == token || "r4" == token)
+		return L4;
+	else if ("l5" == token || "r5" == token)
+		return L5;
+	else if ("l6" == token || "r6" == token)
+		return L6;
+	else if ("l7" == token || "r7" == token)
+		return L7;
+	else if ("i0" == token)
+		return I0;
+	else if ("" == token)
+		return 0;
 	else {
 		try {
-			return (short) std::stoi(htok);
+			return std::stoi(token);
 		} catch (...) {
-			return (short) 0;
+			std::cerr << "Error: Unknown token " << token << std::endl;
+			std::exit(1);
+			return -1;
 		}
 	}
 }
@@ -191,12 +195,12 @@ int main(int argc, char* argv[])
 
 	file.close();
 
-	auto htoks = split(text.str(), ' ');
+	auto tokens = split(text.str(), ' ');
 
-	for (auto htok : htoks)
-		output.push_back(lixasm::get_inst(htok));
+	for (auto token : tokens)
+		output.push_back(lixasm::get_inst(token));
 
-	std::ofstream ofile("a.bin");
-	ofile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
-	ofile.close();
+	std::ofstream outfile("a.bin");
+	outfile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
+	outfile.close();
 }
