@@ -220,6 +220,7 @@ struct lix {
 				this->registers[reg::S0] = this->memory[this->registers[reg::SP] - 2];
 				this->registers[reg::PC] = this->memory[this->registers[reg::SP] - 3];
 				this->registers[reg::SP] -= 3;
+				this->registers[reg::S2] = prot::PROT_LO_1;
 				goto dfe;
 			}
 		} else { // see if low priv user tries to access high priv func
