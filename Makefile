@@ -1,0 +1,16 @@
+COMP = g++
+ARGS = -o
+C = $(COMP) $(ARGS)
+
+build:
+	$(C) lix16 main.cpp
+	$(C) lxsm  asm/simple.cpp
+	./lxsm test.s
+
+test: build
+	./lix16
+
+clean: build
+	rm lix16
+	rm lxsm
+	rm a.bin
