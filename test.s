@@ -1,0 +1,11 @@
+mov lr 6
+b 24 0
+12 0 0
+18 0 0
+mov r0 0
+iret 0 0
+hlt 0 0
+iret 0 0
+swi 1 0
+in 0 0
+mov r0 2

@@ -60,6 +60,7 @@ enum inst {
 
 	HLT,
 
+	SWI,
 	SVC,
 	IRET,
 
@@ -117,6 +118,8 @@ short get_inst(std::string token)
 		return RBL;
 	else if ("cmp" == token)
 		return CMP;
+	else if ("swi" == token)
+		return SWI;
 	else if ("b" == token)
 		return B;
 	else if ("biz" == token)
