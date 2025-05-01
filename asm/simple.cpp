@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
 	std::vector<short> output;
 
 	while (std::getline(file, line))
-		text << line << ' ';
+		if (line[0] != '#') text << line << ' ';
 
 	file.close();
 
