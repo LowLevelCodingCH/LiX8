@@ -270,12 +270,12 @@ struct lix {
 			if (this->registers[reg::F1] == 2) this->registers[reg::PC] = this->arg0;
 			break; // break out
 		case inst::MOVM:
-			this->memory[this->registers[(reg) this->arg0]]
+			this->rmemory[this->registers[(reg) this->arg0]]
 			    = this->registers[(reg) this->arg1];
 			break; // break out
 		case inst::LOD:
 			this->registers[(reg) this->arg1]
-			    = this->memory[this->registers[(reg) this->arg0]];
+			    = this->rmemory[this->registers[(reg) this->arg0]];
 			break;
 		case inst::MOV:
 			this->registers[(reg) this->arg0] = this->arg1;
@@ -309,7 +309,7 @@ struct lix {
 
 	void clearmem()
 	{
-		for (int i = 0; i < 4096; i++)
+		for (int i = 0; i < 8192; i++)
 			this->memory[i] = 0;
 	}
 
@@ -363,7 +363,6 @@ int main()
 		cpu.fetch();
 		if (cpu.inst == HLT) break;
 		cpu.execute();
-		cpu.printinst();
 	}
 
 	return 0;
