@@ -72,7 +72,7 @@ enum inst {
 namespace lixasm
 {
 /**
- * @param Name of the token
+ * @param token Name of the token
  * @return number to be put rawly into the executable file
  * @note uses yoda notation (lit == var) instead of "normal" notation (var == lit),
  *       To prevent this: (var = lit) from accidentally happening
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 	auto tokens = split(text.str(), " \t,.");
 
 	for (auto token : tokens)
-		output.push_back(lixasm::get_inst(token));
+		if ("" != token) output.push_back(lixasm::get_inst(token));
 
 	std::ofstream outfile("a.bin");
 	outfile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
