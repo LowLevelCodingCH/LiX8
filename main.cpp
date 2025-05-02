@@ -16,7 +16,7 @@ enum excep {
 	INV_OPCODE,
 	DIV_BY_ZERO,
 	DOUBLE_FLT,
-	PROT_FLT
+	PROT_FLT,
 };
 /**
  * @brief PROT_HI_0 is the highest priv
@@ -218,84 +218,37 @@ struct lix {
 	 */
 	void execute()
 	{
-		excep cexcp;
 		if (this->registers[reg::S2] == prot::PROT_HI_0) {
 			switch (this->inst) {
 			case inst::SVCSTR:
 				this->registers[reg::LR] = this->arg0;
-				goto dfe;
+				return;
 			case inst::SWI:
 				this->registers[reg::S2] = this->arg0;
-				goto dfe;
+				return;
 			case inst::IRET:
+				this->registers[reg::SP]--;
 				this->registers[reg::S1] =
-				    this->memory[this->registers[reg::SP] - 1];
+				    this->memory[this->registers[reg::SP]];
+				this->registers[reg::SP]--;
 				this->registers[reg::S0] =
-				    this->memory[this->registers[reg::SP] - 2];
+				    this->memory[this->registers[reg::SP]];
+				this->registers[reg::SP]--;
 				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::SP] - 3];
-				this->registers[reg::SP] -= 3;
+				    this->memory[this->registers[reg::SP]];
 				this->registers[reg::S2] = prot::PROT_LO_1;
-				goto dfe;
+				return;
 			}
-		} else { // see if low priv user tries to access high
-			 // priv func
+		}
+
+		if (this->registers[reg::S2] == prot::PROT_LO_1) {
 			switch (this->inst) {
 			case inst::SVCSTR:
-				cexcp = excep::PROT_FLT;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::PC];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S0];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S1];
-				this->registers[reg::SP]++;
-				if (this->memory[this->registers[reg::LR] +
-						 cexcp] == 0)
-					cexcp = excep::DOUBLE_FLT;
-				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::LR] +
-						 cexcp];
-				goto dfe;
+				goto prot_fault;
 			case inst::SWI:
-				cexcp = excep::PROT_FLT;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::PC];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S0];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S1];
-				this->registers[reg::SP]++;
-				if (this->memory[this->registers[reg::LR] +
-						 cexcp] == 0)
-					cexcp = excep::DOUBLE_FLT;
-				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::LR] +
-						 cexcp];
-				goto dfe;
+				goto prot_fault;
 			case inst::IRET:
-				cexcp = excep::PROT_FLT;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::PC];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S0];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S1];
-				this->registers[reg::SP]++;
-				this->registers[reg::S2] = prot::PROT_LO_1;
-				if (this->memory[this->registers[reg::LR] +
-						 cexcp] == 0)
-					cexcp = excep::DOUBLE_FLT;
-				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::LR] +
-						 cexcp];
-				goto dfe;
+				goto prot_fault;
 			}
 		}
 
@@ -398,6 +351,8 @@ struct lix {
 		case inst::MOV:
 			if (this->arg0 != reg::S2 && this->arg0 != reg::LR)
 				this->registers[(reg) this->arg0] = this->arg1;
+			else
+				goto prot_fault;
 			break;
 		case inst::INC:
 			this->registers[(reg) this->arg0]++;
@@ -421,7 +376,6 @@ struct lix {
 			    this->registers[(reg) this->arg0];
 			break;
 		default:
-			cexcp = excep::INV_OPCODE;
 			this->memory[this->registers[reg::SP]] =
 			    this->registers[reg::PC];
 			this->registers[reg::SP]++;
@@ -431,13 +385,22 @@ struct lix {
 			this->memory[this->registers[reg::SP]] =
 			    this->registers[reg::S1];
 			this->registers[reg::SP]++;
-			if (this->memory[this->registers[reg::LR] + cexcp] == 0)
-				cexcp = excep::DOUBLE_FLT;
 			this->registers[reg::PC] =
-			    this->memory[this->registers[reg::LR] + cexcp];
+			    this->memory[this->registers[reg::LR] +
+					 excep::INV_OPCODE];
 			break;
 		}
-	dfe:
+		return;
+	prot_fault:
+		this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
+		this->registers[reg::SP]++;
+		this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
+		this->registers[reg::SP]++;
+		this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
+		this->registers[reg::SP]++;
+		this->registers[reg::S2] = prot::PROT_HI_0;
+		this->registers[reg::PC] =
+		    this->memory[this->registers[reg::LR] + excep::PROT_FLT];
 	}
 
 	void clearmem()
@@ -499,6 +462,7 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
+		std::cout << "PC: " << cpu.registers[reg::PC] << std::endl;
 	}
 
 	return 0;

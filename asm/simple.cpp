@@ -161,16 +161,15 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return LR;
 	else if ("" == token)
 		return 0;
-	if (token[0] == ':') {
+	if (token.back() == ':') {
 		auto lbl = lbls.find(token);
 		if (lbl == lbls.end()) {
 			std::cerr << "Error: Label not found " << token
 				  << std::endl;
 			std::exit(1);
 			return -1;
-		} else {
+		} else
 			return lbl->second;
-		}
 	}
 	try {
 		return std::stoi(token);
@@ -225,7 +224,7 @@ int main(int argc, char *argv[])
 			for (auto token : tokens) {
 				if ("" == token) continue;
 
-				if (tokens[0][0] == ':') {
+				if (tokens[0].back() == ':') {
 					std::pair<std::string, int> lblpair(token,
 									    i);
 					lbls.insert(lblpair);
