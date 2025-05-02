@@ -75,8 +75,8 @@ namespace lixasm
 /**
  * @param token Name of the token
  * @return number to be put rawly into the executable file
- * @note uses yoda notation (lit == var) instead of "normal" notation (var == lit),
- *       To prevent this: (var = lit) from accidentally happening
+ * @note uses yoda notation (lit == var) instead of "normal" notation (var ==
+ * lit), To prevent this: (var = lit) from accidentally happening
  */
 short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 {
@@ -165,7 +165,8 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 	if (token[0] == ':') {
 		auto lbl = lbls.find(token);
 		if (lbl == lbls.end()) {
-			std::cerr << "Error: Label not found " << token << std::endl;
+			std::cerr << "Error: Label not found " << token
+				  << std::endl;
 			std::exit(1);
 			return -1;
 		} else {
@@ -179,17 +180,17 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		std::exit(1);
 		return -1;
 	}
-} // namespace lixasm
 }
+} // namespace lixasm
 
-bool instr(char c, char* s)
+bool instr(char c, char *s)
 {
 	for (int i = 0; i < strlen(s); i++)
 		if (c == s[i]) return true;
 	return false;
 }
 
-std::vector<std::string> split(std::string string, char* delimiter)
+std::vector<std::string> split(std::string string, char *delimiter)
 {
 	std::string buffer;
 	std::vector<std::string> result;
@@ -206,7 +207,7 @@ std::vector<std::string> split(std::string string, char* delimiter)
 	return result;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	if (argc != 2) exit(1);
 
@@ -220,14 +221,18 @@ int main(int argc, char* argv[])
 
 	while (std::getline(file, line)) {
 		if (line[0] != '#') {
-			auto tokens = split(line, " \t,.");
+			auto tokens = split(line, " \t,");
 
 			for (auto token : tokens) {
 				if ("" == token) continue;
 
 				if (tokens[0][0] == ':') {
-					std::pair<std::string, int> lblpair(token, i);
+					std::pair<std::string, int> lblpair(token,
+									    i);
 					lbls.insert(lblpair);
+					continue;
+				} else if ("$" == token) {
+					output.push_back(i - 1);
 					continue;
 				}
 				output.push_back(lixasm::get_inst(token, lbls));
@@ -237,6 +242,7 @@ int main(int argc, char* argv[])
 	}
 	file.close();
 
-	outfile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
+	outfile.write(reinterpret_cast<char *>(output.data()),
+		      output.size() * sizeof(short));
 	outfile.close();
 }

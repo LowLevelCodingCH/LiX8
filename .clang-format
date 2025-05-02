@@ -1,11 +1,11 @@
-BasedOnStyle: WebKit
+BasedOnStyle: Microsoft
 IndentWidth: 8
 TabWidth: 8
 UseTab: Always
 BreakBeforeBraces: Linux
 AllowShortIfStatementsOnASingleLine: true
 IndentCaseLabels: false
-ColumnLimit: 103
+ColumnLimit: 82
 SpacesBeforeTrailingComments: 1
 SortIncludes: true
 SpaceAfterCStyleCast: true
