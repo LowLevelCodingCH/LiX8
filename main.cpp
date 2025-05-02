@@ -75,8 +75,8 @@ enum inst {
 	IN,
 };
 
-#define cr(I)                                                         \
-	case I:                                                       \
+#define cr(I)                                                                    \
+	case I:                                                                  \
 		return #I
 /**
  * @brief Returns string name of an instruction
@@ -187,9 +187,7 @@ struct lix {
 	{
 		for (int i = 0; i < PROGLEN * 3; i++)
 			std::cout
-			    << (int) ((
-				   (char *) (this->memory))[PROGADR +
-							    i])
+			    << (int) (((char *) (this->memory))[PROGADR + i])
 			    << " ";
 		std::cout << std::endl;
 	}
@@ -199,8 +197,7 @@ struct lix {
 	 */
 	void printinst()
 	{
-		std::cout << intoa(this->inst) << " "
-			  << (int) this->arg0 << ", "
+		std::cout << intoa(this->inst) << " " << (int) this->arg0 << ", "
 			  << (int) this->arg1 << std::endl;
 	}
 
@@ -210,10 +207,8 @@ struct lix {
 	void fetch()
 	{
 		this->inst = this->memory[this->registers[reg::PC]];
-		this->arg0 =
-		    this->memory[this->registers[reg::PC] + 1];
-		this->arg1 =
-		    this->memory[this->registers[reg::PC] + 2];
+		this->arg0 = this->memory[this->registers[reg::PC] + 1];
+		this->arg1 = this->memory[this->registers[reg::PC] + 2];
 		this->registers[reg::PC] += 3;
 	}
 
@@ -237,17 +232,13 @@ struct lix {
 				goto dfe;
 			case inst::IRET:
 				this->registers[reg::S1] =
-				    this->memory
-					[this->registers[reg::SP] - 1];
+				    this->memory[this->registers[reg::SP] - 1];
 				this->registers[reg::S0] =
-				    this->memory
-					[this->registers[reg::SP] - 2];
+				    this->memory[this->registers[reg::SP] - 2];
 				this->registers[reg::PC] =
-				    this->memory
-					[this->registers[reg::SP] - 3];
+				    this->memory[this->registers[reg::SP] - 3];
 				this->registers[reg::SP] -= 3;
-				this->registers[reg::S2] =
-				    prot::PROT_LO_1;
+				this->registers[reg::S2] = prot::PROT_LO_1;
 				goto dfe;
 			}
 		} else { // see if low priv user tries to access high
@@ -255,120 +246,94 @@ struct lix {
 			switch (this->inst) {
 			case inst::SVCSTR:
 				cexcp = excep::PROT_FLT;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::PC];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S0];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S1];
 				this->registers[reg::SP]++;
-				if (this->memory
-					[this->registers[reg::LR] +
-					 cexcp] == 0)
+				if (this->memory[this->registers[reg::LR] +
+						 cexcp] == 0)
 					cexcp = excep::DOUBLE_FLT;
 				this->registers[reg::PC] =
-				    this->memory
-					[this->registers[reg::LR] +
-					 cexcp];
+				    this->memory[this->registers[reg::LR] +
+						 cexcp];
 				goto dfe;
 			case inst::SWI:
 				cexcp = excep::PROT_FLT;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::PC];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S0];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S1];
 				this->registers[reg::SP]++;
-				if (this->memory
-					[this->registers[reg::LR] +
-					 cexcp] == 0)
+				if (this->memory[this->registers[reg::LR] +
+						 cexcp] == 0)
 					cexcp = excep::DOUBLE_FLT;
 				this->registers[reg::PC] =
-				    this->memory
-					[this->registers[reg::LR] +
-					 cexcp];
+				    this->memory[this->registers[reg::LR] +
+						 cexcp];
 				goto dfe;
 			case inst::IN:
 				cexcp = excep::PROT_FLT;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::PC];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S0];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S1];
 				this->registers[reg::SP]++;
-				if (this->memory
-					[this->registers[reg::LR] +
-					 cexcp] == 0)
+				if (this->memory[this->registers[reg::LR] +
+						 cexcp] == 0)
 					cexcp = excep::DOUBLE_FLT;
 				this->registers[reg::PC] =
-				    this->memory
-					[this->registers[reg::LR] +
-					 cexcp];
+				    this->memory[this->registers[reg::LR] +
+						 cexcp];
 				goto dfe;
 			case inst::OUT:
 				cexcp = excep::PROT_FLT;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::PC];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S0];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S1];
 				this->registers[reg::SP]++;
-				if (this->memory
-					[this->registers[reg::LR] +
-					 cexcp] == 0)
+				if (this->memory[this->registers[reg::LR] +
+						 cexcp] == 0)
 					cexcp = excep::DOUBLE_FLT;
 				this->registers[reg::PC] =
-				    this->memory
-					[this->registers[reg::LR] +
-					 cexcp];
+				    this->memory[this->registers[reg::LR] +
+						 cexcp];
 				goto dfe;
 			case inst::IRET:
 				cexcp = excep::PROT_FLT;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::PC];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S0];
 				this->registers[reg::SP]++;
-				this->memory
-				    [this->registers[reg::SP]] =
+				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::S1];
 				this->registers[reg::SP]++;
-				this->registers[reg::S2] =
-				    prot::PROT_LO_1;
-				if (this->memory
-					[this->registers[reg::LR] +
-					 cexcp] == 0)
+				this->registers[reg::S2] = prot::PROT_LO_1;
+				if (this->memory[this->registers[reg::LR] +
+						 cexcp] == 0)
 					cexcp = excep::DOUBLE_FLT;
 				this->registers[reg::PC] =
-				    this->memory
-					[this->registers[reg::LR] +
-					 cexcp];
+				    this->memory[this->registers[reg::LR] +
+						 cexcp];
 				goto dfe;
 			}
 		}
@@ -439,8 +404,7 @@ struct lix {
 			this->registers[reg::SP]++;
 			this->registers[reg::S2] = prot::PROT_HI_0;
 			this->registers[reg::PC] =
-			    this->memory[this->registers[reg::LR] +
-					 this->arg0];
+			    this->memory[this->registers[reg::LR] + this->arg0];
 			break;
 		case inst::BIZ:
 			if (this->registers[reg::S1] == 0)
@@ -455,20 +419,16 @@ struct lix {
 				this->registers[reg::PC] = this->arg0;
 			break;
 		case inst::STR:
-			this->rmemory
-			    [this->registers[(reg) this->arg0]] =
+			this->rmemory[this->registers[(reg) this->arg0]] =
 			    this->registers[(reg) this->arg1];
 			break;
 		case inst::LDR:
 			this->registers[(reg) this->arg1] =
-			    this->rmemory
-				[this->registers[(reg) this->arg0]];
+			    this->rmemory[this->registers[(reg) this->arg0]];
 			break;
 		case inst::MOV:
-			if (this->arg0 != reg::S2 &&
-			    this->arg0 != reg::LR)
-				this->registers[(reg) this->arg0] =
-				    this->arg1;
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR)
+				this->registers[(reg) this->arg0] = this->arg1;
 			break;
 		case inst::INC:
 			this->registers[(reg) this->arg0]++;
@@ -502,12 +462,10 @@ struct lix {
 			this->memory[this->registers[reg::SP]] =
 			    this->registers[reg::S1];
 			this->registers[reg::SP]++;
-			if (this->memory[this->registers[reg::LR] +
-					 cexcp] == 0)
+			if (this->memory[this->registers[reg::LR] + cexcp] == 0)
 				cexcp = excep::DOUBLE_FLT;
 			this->registers[reg::PC] =
-			    this->memory[this->registers[reg::LR] +
-					 cexcp];
+			    this->memory[this->registers[reg::LR] + cexcp];
 			break;
 		}
 	dfe:
@@ -544,8 +502,8 @@ struct lix {
 
 #define HW_SUP
 // #undef HW_SUP
-#define SGA_ADR                                                       \
-	0x2000 /* "Video card"'s ram would be attached there (MMIO.   \
+#define SGA_ADR                                                                  \
+	0x2000 /* "Video card"'s ram would be attached there (MMIO.              \
 		  read more) */
 
 int main()
