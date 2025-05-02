@@ -47,7 +47,9 @@ enum inst {
 	NOP,
 	CPY,
 	STR,
+	STRB,
 	LDR,
+	LDRB,
 	MOV,
 	INC,
 	DEC,
@@ -71,8 +73,6 @@ enum inst {
 	SVC,
 	SVCSTR,
 	IRET,
-	OUT,
-	IN,
 };
 
 #define cr(I)                                                                    \
@@ -105,13 +105,14 @@ std::string intoa(short i)
 		cr(CMP);
 		cr(SWI);
 		cr(B);
+		cr(STRB);
+		cr(LDR);
+		cr(LDRB);
 		cr(BIZ);
 		cr(BIM);
 		cr(BIL);
 		cr(BNZ);
 		cr(HLT);
-		cr(OUT);
-		cr(IN);
 	default:
 		return "UNKNOWN";
 	}
@@ -226,10 +227,6 @@ struct lix {
 			case inst::SWI:
 				this->registers[reg::S2] = this->arg0;
 				goto dfe;
-			case inst::IN:
-				goto dfe;
-			case inst::OUT:
-				goto dfe;
 			case inst::IRET:
 				this->registers[reg::S1] =
 				    this->memory[this->registers[reg::SP] - 1];
@@ -263,42 +260,6 @@ struct lix {
 						 cexcp];
 				goto dfe;
 			case inst::SWI:
-				cexcp = excep::PROT_FLT;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::PC];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S0];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S1];
-				this->registers[reg::SP]++;
-				if (this->memory[this->registers[reg::LR] +
-						 cexcp] == 0)
-					cexcp = excep::DOUBLE_FLT;
-				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::LR] +
-						 cexcp];
-				goto dfe;
-			case inst::IN:
-				cexcp = excep::PROT_FLT;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::PC];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S0];
-				this->registers[reg::SP]++;
-				this->memory[this->registers[reg::SP]] =
-				    this->registers[reg::S1];
-				this->registers[reg::SP]++;
-				if (this->memory[this->registers[reg::LR] +
-						 cexcp] == 0)
-					cexcp = excep::DOUBLE_FLT;
-				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::LR] +
-						 cexcp];
-				goto dfe;
-			case inst::OUT:
 				cexcp = excep::PROT_FLT;
 				this->memory[this->registers[reg::SP]] =
 				    this->registers[reg::PC];
@@ -419,10 +380,18 @@ struct lix {
 				this->registers[reg::PC] = this->arg0;
 			break;
 		case inst::STR:
+			this->memory[this->registers[(reg) this->arg0]] =
+			    this->registers[(reg) this->arg1];
+			break;
+		case inst::STRB:
 			this->rmemory[this->registers[(reg) this->arg0]] =
 			    this->registers[(reg) this->arg1];
 			break;
 		case inst::LDR:
+			this->registers[(reg) this->arg1] =
+			    this->memory[this->registers[(reg) this->arg0]];
+			break;
+		case inst::LDRB:
 			this->registers[(reg) this->arg1] =
 			    this->rmemory[this->registers[(reg) this->arg0]];
 			break;

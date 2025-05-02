@@ -34,7 +34,9 @@ enum inst {
 	NOP,
 	CPY,
 	STR,
+	STRB,
 	LDR,
+	LDRB,
 	MOV,
 	INC,
 	DEC,
@@ -65,9 +67,6 @@ enum inst {
 	SVC,
 	SVCSTR,
 	IRET,
-
-	OUT,
-	IN,
 };
 
 namespace lixasm
@@ -84,12 +83,16 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return NOP;
 	else if ("cpy" == token)
 		return CPY;
-	else if ("str" == token)
-		return STR;
 	else if ("mov" == token)
 		return MOV;
+	else if ("str" == token)
+		return STR;
 	else if ("ldr" == token)
 		return LDR;
+	else if ("strb" == token)
+		return STRB;
+	else if ("ldrb" == token)
+		return LDRB;
 	else if ("inc" == token)
 		return INC;
 	else if ("dec" == token)
@@ -134,10 +137,6 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return BNZ;
 	else if ("hlt" == token)
 		return HLT;
-	else if ("out" == token)
-		return OUT;
-	else if ("in" == token)
-		return IN;
 	else if ("pc" == token)
 		return PC;
 	else if ("sp" == token)
