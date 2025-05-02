@@ -72,7 +72,7 @@ enum inst {
 		return #I
 /**
  * @brief Returns string name of an instruction
- * @param Instruction to return the name of
+ * @param i Instruction to return the name of
  */
 std::string intoa(short i)
 {

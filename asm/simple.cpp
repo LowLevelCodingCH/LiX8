@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 /**
@@ -77,7 +78,7 @@ namespace lixasm
  * @note uses yoda notation (lit == var) instead of "normal" notation (var == lit),
  *       To prevent this: (var = lit) from accidentally happening
  */
-short get_inst(std::string token)
+short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 {
 	if ("nop" == token)
 		return NOP;
@@ -161,17 +162,25 @@ short get_inst(std::string token)
 		return LR;
 	else if ("" == token)
 		return 0;
-	else {
-		try {
-			return std::stoi(token);
-		} catch (...) {
-			std::cerr << "Error: Unknown token " << token << std::endl;
+	if (token[0] == ':') {
+		auto lbl = lbls.find(token);
+		if (lbl == lbls.end()) {
+			std::cerr << "Error: Label not found " << token << std::endl;
 			std::exit(1);
 			return -1;
+		} else {
+			return lbl->second;
 		}
 	}
-}
+	try {
+		return std::stoi(token);
+	} catch (...) {
+		std::cerr << "Error: Unknown token " << token << std::endl;
+		std::exit(1);
+		return -1;
+	}
 } // namespace lixasm
+}
 
 bool instr(char c, char* s)
 {
@@ -205,18 +214,29 @@ int main(int argc, char* argv[])
 	std::string line;
 	std::stringstream text;
 	std::vector<short> output;
+	std::ofstream outfile("a.bin");
+	int i = 0;
+	std::unordered_map<std::string, int> lbls;
 
-	while (std::getline(file, line))
-		if (line[0] != '#') text << line << ' ';
+	while (std::getline(file, line)) {
+		if (line[0] != '#') {
+			auto tokens = split(line, " \t,.");
 
+			for (auto token : tokens) {
+				if ("" == token) continue;
+
+				if (tokens[0][0] == ':') {
+					std::pair<std::string, int> lblpair(token, i);
+					lbls.insert(lblpair);
+					continue;
+				}
+				output.push_back(lixasm::get_inst(token, lbls));
+				++i;
+			}
+		}
+	}
 	file.close();
 
-	auto tokens = split(text.str(), " \t,.");
-
-	for (auto token : tokens)
-		if ("" != token) output.push_back(lixasm::get_inst(token));
-
-	std::ofstream outfile("a.bin");
 	outfile.write(reinterpret_cast<char*>(output.data()), output.size() * sizeof(short));
 	outfile.close();
 }
