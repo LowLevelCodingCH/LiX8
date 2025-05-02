@@ -20,9 +20,9 @@ syscall:
 	iret 0 0
 
 ivt:
-	exc:, exc:, exc:,
+	{exc:, exc:, exc:,
 	pfault:, exc:, exc:,
-	syscall:, exc:, exc:
+	syscall:, exc:, exc:}
 
 # Initializes the operating system
 init_sys:

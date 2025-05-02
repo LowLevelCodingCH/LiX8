@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 
 	while (std::getline(file, line)) {
 		if (line[0] != '#') {
-			auto tokens = split(line, " \t,");
+			auto tokens = split(line, " \t,[]{}()");
 
 			for (auto token : tokens) {
 				if ("" == token) continue;
