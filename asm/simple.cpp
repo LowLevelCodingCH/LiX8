@@ -67,6 +67,7 @@ enum inst {
 	SVC,
 	SVCSTR,
 	IRET,
+	IRETRG,
 };
 
 namespace lixasm
@@ -117,6 +118,8 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return SVCSTR;
 	else if ("iret" == token)
 		return IRET;
+	else if ("iretrg" == token)
+		return IRETRG;
 	else if ("bl" == token)
 		return BL;
 	else if ("bil" == token)
@@ -159,13 +162,16 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return L7;
 	else if ("lr" == token)
 		return LR;
+	else if ("s1" == token)
+		return S1;
+	else if ("s0" == token)
+		return S0;
 	else if ("" == token)
 		return 0;
 	if (token.back() == ':') {
 		auto lbl = lbls.find(token);
 		if (lbl == lbls.end()) {
-			std::cerr << "Error: Label not found " << token
-				  << std::endl;
+			std::cerr << "Error: Label not found " << token << std::endl;
 			std::exit(1);
 			return -1;
 		} else
@@ -225,8 +231,7 @@ int main(int argc, char *argv[])
 				if ("" == token) continue;
 
 				if (tokens[0].back() == ':') {
-					std::pair<std::string, int> lblpair(token,
-									    i);
+					std::pair<std::string, int> lblpair(token, i);
 					lbls.insert(lblpair);
 					continue;
 				} else if ("$" == token) {
@@ -240,7 +245,6 @@ int main(int argc, char *argv[])
 	}
 	file.close();
 
-	outfile.write(reinterpret_cast<char *>(output.data()),
-		      output.size() * sizeof(short));
+	outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
 	outfile.close();
 }

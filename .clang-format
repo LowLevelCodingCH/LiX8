@@ -5,7 +5,7 @@ UseTab: Always
 BreakBeforeBraces: Linux
 AllowShortIfStatementsOnASingleLine: true
 IndentCaseLabels: false
-ColumnLimit: 82
+ColumnLimit: 103
 SpacesBeforeTrailingComments: 1
 SortIncludes: true
 SpaceAfterCStyleCast: true
