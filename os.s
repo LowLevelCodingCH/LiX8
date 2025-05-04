@@ -8,7 +8,7 @@
 # WAIT: 3 things for reading and understanding this code better:
 # 1: read ALL comments. assembly becomes ASSembly otherwise and you wanna cripple
 # 2: read down there where it says "Just so you know variables". trust me, itll help-
-# 3: mov sp, #16388 is common after interrupts. it is just user_stack_pointer+4 (4 because svc and interrupts push 4 values)
+# 3: mov sp, #16388 is common after interrupts. it is just user_stack_pointer+sp+4 (4 because svc and interrupts push 4 values)
 
 # NOTE: add logging to all exceptions
 
@@ -67,6 +67,7 @@ clregs:
 iopcode:
 	adrum #0 #0
 	adrbs #0 #0
+	cpy r2, sp
 	mov r1, #4
 	sub sp, r1
 
@@ -80,57 +81,54 @@ iopcode:
 	inc r0 #0
 	str r0, r1
 	adrum #16384 #0
-	mov sp, #16388
+	cpy sp, r2
 	iret #0 #0
 
 # Division by zero (e.g. 1/0) will clear all regs to 1
 dbzero:
 # Sets all regs to 1 so that dbzero cant happen again
 # Doesnt zero the code since it is kinda important
+	cpy r2, sp
 	mov sp, #8192
 	adrum #0 #0
 	adrbs #0 #0
 	mov r0, #1
 	mov r1, #1
-	mov r2, #1
 	mov r3, #1
 	mov r4, #1
 	mov r5, #1
 	mov r6, #1
 	mov r7, #1
 	adrum #16384 #0
-	mov sp, #16388
+	cpy sp, r2
 	iret #0 #0
 
 # Double fault: when a fault doesnt exist (is 0) in the ivt and is trying to be called
 # Should halt.
 dfault:
-	adrbs #0 #0
-	adrum #0 #0
-	mov sp, #8192
-	mov sp, #16388
-	adrum #16384 #0
 	hlt #0 #0
 
 # Protection fault: when a process tries to execute privileged instructions in user mode
 pfault:
 	adrbs #0 #0
 	adrum #0 #0
+	cpy r2, sp
 	mov sp, #8192
 # Prints a Message
 	mov r0, pfault_msg:
 	bl print: #0
 	adrum #16384 #0
-	mov sp, #16388
+	cpy sp, r2
 	iret #0 #0
 
 syscall:
+	cpy r2, sp
 	mov sp, #8192
 	adrbs #0 #0
 	adrum #0 #0
 # Syscall code: coming soon
 	adrum #16384 #0
-	mov sp, #16388
+	cpy sp, r2
 	iret #0 #0
 
 # If any interrupts f' up we get here and halt
@@ -190,9 +188,7 @@ b_loop:
 
 # Will likely be a scheduler or sth
 kernel_loop:
-	#200 #0 #0
 	b kernel_loop: #0
-
 
 # Padding because we dont want writes to the "data" section
 # (cpu doesnt rlly care. it doesnt see this as data but as noop noop noop noop...)
@@ -209,6 +205,8 @@ sec_data_pad:
 	#0 #0 #0 #0 #0 #0
 # Faults with invalid opcode if code execution gets here (should never happen)
 	#69 #420 #6969
+# Should be 0x69 0x420 0x6969 or simmilar
+	#105 #1056 #26985
 # Then halts
 	hlt hlt hlt
 

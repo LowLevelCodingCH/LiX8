@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #define HW_SUP
 // #undef HW_SUP
@@ -83,9 +84,16 @@ enum inst {
 	IRETRG,
 };
 
+std::string to_lower(std::string s)
+{
+	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+	return s;
+}
+
+// #I "" so that it works. otherwise char* is a null ptr
 #define cr(I)                                                                                                          \
 	case I:                                                                                                        \
-		return #I
+		return to_lower((std::string)((char *) (#I "")))
 /**
  * @brief Returns string name of an instruction
  * @param i Instruction to return the name of
@@ -289,7 +297,10 @@ struct lix {
 		case inst::NOP:
 			break;
 		case inst::HLT:
-			exit(0);
+			if (this->registers[reg::S2] == PROT_HI_0)
+				exit(0);
+			else
+				goto prot_fault;
 		case inst::PUSH:
 			this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
 			this->registers[reg::SP]++;
@@ -313,7 +324,11 @@ struct lix {
 			this->registers[reg::PC] = this->memory[this->registers[reg::SP]];
 			break;
 		case inst::CPY:
-			this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1];
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1];
+			else
+				goto prot_fault;
 			break;
 		case inst::B:
 			this->registers[reg::PC] = this->arg0;
@@ -425,6 +440,14 @@ struct lix {
 			else
 				goto prot_fault;
 			break;
+		case inst::DIV:
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] =
+				    std::round(this->registers[(reg) this->arg0] / this->registers[(reg) this->arg1]);
+			else
+				goto prot_fault;
+			break;
 		case inst::IRETRG:
 			this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
 			this->registers[reg::SP]++;
@@ -502,8 +525,10 @@ int main()
 
 	std::ifstream file("a.bin");
 	std::ostringstream a;
-	a << file.rdbuf();
 	int i = 0;
+
+	a << file.rdbuf();
+
 	for (i = 0; i < a.str().size() / 2; ++i) {
 		short b = ((short *) (a.str().data()))[i];
 		prog[i] = b;
@@ -517,7 +542,6 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
-		std::cout << cpu.registers[reg::L0] << std::endl;
 	}
 
 	printf((char *) vgamem_at_the_end);

@@ -242,20 +242,20 @@ int main(int argc, char *argv[])
 	// Pass 1: resolve labels
 	std::cout << "Pass 1: Resolving labels and symbols" << std::endl;
 	while (std::getline(file, line)) {
-		if (line[0] != '#') {
-			auto tokens = split(line, " \t,[]{}()");
+		if (line[0] == '#') continue;
+		auto tokens = split(line, " \t,[]{}()");
 
-			for (auto token : tokens) {
-				if ("" == token) continue;
+		for (auto token : tokens) {
+			if ("" == token) continue;
 
-				if (tokens[0].back() == ':') {
-					std::pair<std::string, int> lblpair(token, i);
-					lbls.insert(lblpair);
-					continue;
-				}
-				gtokens.push_back(token);
-				++i;
+			if (tokens[0].back() == ':') {
+				std::pair<std::string, int> lblpair(token, i);
+				lbls.insert(lblpair);
+				continue;
 			}
+
+			gtokens.push_back(token);
+			++i;
 		}
 	}
 
@@ -278,20 +278,35 @@ int main(int argc, char *argv[])
 			output.push_back(i - 1);
 			continue;
 		}
+
 		output.push_back(lixasm::get_inst(token, lbls));
 		++tokmnt;
 		++i;
 	}
 
 	if (pseudoclean) {
-		std::cout << "Pass '3': Padding to 0x8000 and then putting in the labels at the end (-Pc)" << std::endl;
+		std::cout << "Pass '3': Padding to 8192 and then putting in the labels at the end (-Pc)" << std::endl;
 
-		for (i = 0; i < 0x800 - tokmnt; i++)
+		for (i = 0; i < 8192 - tokmnt; i++)
 			output.push_back(0);
+
+		// That if it ever gets here it stops
+		output.push_back((short) HLT);
+		output.push_back(0);
+		output.push_back(0);
+
+		for (auto a : ".datasec$__PASS3$ignoredbycpu")
+			output.push_back((short) a);
+		output.push_back(0);
+
+		for (auto a : ".symtab$__PASS3$ignoredbycpu")
+			output.push_back((short) a);
 
 		for (auto a : lbls) {
 			for (auto c : a.first)
 				output.push_back((short) c);
+			output.push_back(0);
+			output.push_back(a.second);
 			output.push_back(0);
 		}
 	}
