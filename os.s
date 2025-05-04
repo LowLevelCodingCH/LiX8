@@ -112,7 +112,7 @@ pfault:
 	mov sp, #8192
 # Prints a message
 	mov r0, pfault_msg:
-#	bl print: #0
+	bl print: #0
 	adrum #16384 #0
 	mov sp, #16388
 	iret #0 #0
