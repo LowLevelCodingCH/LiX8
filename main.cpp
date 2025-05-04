@@ -12,7 +12,7 @@
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
  */
 
-#define PROGLEN 0x3000
+#define PROGLEN 800
 #define PROGADR 0
 // Not the vga buffer
 
@@ -365,36 +365,65 @@ struct lix {
 #endif
 			break;
 		case inst::LDR:
-			this->registers[(reg) this->arg0] =
-			    this->memory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] =
+				    this->memory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
+			else
+				goto prot_fault;
 			break;
 		case inst::LDRB:
-			this->registers[(reg) this->arg0] =
-			    (short) this->rmemory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] =
+				    this->rmemory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
+			else
+				goto prot_fault;
 			break;
 		case inst::MOV:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR)
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
 				this->registers[(reg) this->arg0] = this->arg1;
 			else
 				goto prot_fault;
 			break;
 		case inst::INC:
-			this->registers[(reg) this->arg0]++;
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0]++;
+			else
+				goto prot_fault;
 			break;
 		case inst::DEC:
-			this->registers[(reg) this->arg0]--;
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0]--;
+			else
+				goto prot_fault;
 			break;
 		case inst::ADD:
-			this->registers[(reg) this->arg0] =
-			    this->registers[(reg) this->arg0] + this->registers[(reg) this->arg1];
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] =
+				    this->registers[(reg) this->arg0] + this->registers[(reg) this->arg1];
+			else
+				goto prot_fault;
 			break;
 		case inst::MUL:
-			this->registers[(reg) this->arg0] =
-			    this->registers[(reg) this->arg0] * this->registers[(reg) this->arg1];
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] =
+				    this->registers[(reg) this->arg0] * this->registers[(reg) this->arg1];
+			else
+				goto prot_fault;
 			break;
 		case inst::SUB:
-			this->registers[(reg) this->arg0] =
-			    this->registers[(reg) this->arg0] - this->registers[(reg) this->arg1];
+			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			    this->arg0 != reg::S4)
+				this->registers[(reg) this->arg0] =
+				    this->registers[(reg) this->arg0] - this->registers[(reg) this->arg1];
+			else
+				goto prot_fault;
 			break;
 		case inst::IRETRG:
 			this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
@@ -488,7 +517,9 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
+		std::cout << cpu.registers[reg::L0] << std::endl;
 	}
+
 	printf((char *) vgamem_at_the_end);
 	return 0;
 }

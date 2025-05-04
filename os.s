@@ -11,6 +11,13 @@
 b_init:
 	b init_sys: #0
 
+.wait:
+# For safety and debugging
+	hlt #0 #0
+	hlt #0 #0
+	hlt #0 #0
+	hlt #0 #0
+
 # Standard functions
 # Arg N: rN
 print:
@@ -52,23 +59,30 @@ clregs:
 # Invalid opcode: just creates a noop, then skips over the code
 iopcode:
 	adrum #0 #0
-	mov r1, #3
+	adrbs #0 #0
+	mov r1, #4
 	sub sp, r1
 
 	ldr r0, sp
 	sub r0, r1
 	add sp, r1
 	mov r1, #0
+	mov sp, #8192
 # Zeroes
+# Why increment? I dont fucking know. lets NOT find out
+	inc r0 #0
 	str r0, r1
-	iret #0 #0
 	adrum #16384 #0
+	mov sp, #16388
+	iret #0 #0
 
 # Division by zero (e.g. 1/0) will clear all regs to 1
 dbzero:
 # Sets all regs to 1 so that dbzero cant happen again
 # Doesnt zero the code since it is kinda important
+	mov sp, #8192
 	adrum #0 #0
+	adrbs #0 #0
 	mov r0, #1
 	mov r1, #1
 	mov r2, #1
@@ -77,14 +91,17 @@ dbzero:
 	mov r5, #1
 	mov r6, #1
 	mov r7, #1
-	iret #0 #0
 	adrum #16384 #0
+	mov sp, #16388
+	iret #0 #0
 
 # Double fault: when a fault doesnt exist (is 0) in the ivt and is trying to be called
 # Should halt.
 dfault:
 	adrbs #0 #0
 	adrum #0 #0
+	mov sp, #8192
+	mov sp, #16388
 	adrum #16384 #0
 	hlt #0 #0
 
@@ -92,21 +109,33 @@ dfault:
 pfault:
 	adrbs #0 #0
 	adrum #0 #0
+	mov sp, #8192
 # Prints a message
 	mov r0, pfault_msg:
-	bl print: #0
+#	bl print: #0
 	adrum #16384 #0
+	mov sp, #16388
 	iret #0 #0
 
 syscall:
+	mov sp, #8192
 	adrbs #0 #0
 	adrum #0 #0
 # Syscall code: coming soon
 	adrum #16384 #0
+	mov sp, #16388
 	iret #0 #0
+
+# If any interrupts f' up we get here and halt
+.catch:
+	hlt #0 #0
 
 # Initializes the operating system
 init_sys:
+# If we jump to 0 we should halt (for safety and debugging)
+	mov r0, #0
+	mov r1, hlt
+	str r0, r1
 init_kadrspce:
 # So see this is a funny quirk: if the usermode address space is not 0 and we are in kernel mode
 # and we try to write somewhere below the usermode adr space we get a pfault.
@@ -138,6 +167,7 @@ init_umode:
 # Sets the usermode address
 	adrbs #0 #0
 	adrum #16384 #0
+	mov sp, #16384
 
 # Switches to user mode (SWItch)
 # Yes, we do have a mode bit and yes, the impl works
@@ -150,8 +180,8 @@ b_loop:
 
 # Will likely be a scheduler or sth
 kernel_loop:
+	#200 #0 #0
 	b kernel_loop: #0
-	hlt #0 #0
 
 
 # Padding because we dont want writes to the "data" section
@@ -204,6 +234,14 @@ inited_str:
 	#108 #105 #122
 	#101 #100 #10
 	#0 #0 #0
+
+# Just so you know variables
+usermode_address_space:
+	#16384
+kernel_stack_pointer:
+	#8192
+user_stack_pointer:
+	#16384
 
 unused_vars:
 # Only 2 because print_cursor takes 1 already
