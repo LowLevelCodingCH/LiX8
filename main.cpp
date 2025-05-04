@@ -205,7 +205,8 @@ struct lix {
 	std::uint16_t inst;
 	std::uint16_t arg0;
 	std::uint16_t arg1;
-	std::uint8_t rmemory[0xFFFF]; // Not included by def
+	// ffff * 2 because sizeof memory is just sizeof rmemory / 2. because 16 is 2x8.
+	std::uint8_t rmemory[0xFFFF * 2]; // Not included by def
 	std::uint16_t *memory;
 
 	/**
@@ -214,7 +215,7 @@ struct lix {
 	void printprog()
 	{
 		for (int i = 0; i < PROGLEN * 3; i++)
-			std::cout << (int) (((char *) (this->memory))[PROGADR + i]) << " ";
+			std::cout << (int) (((short *) (this->memory))[PROGADR + i]) << " ";
 		std::cout << std::endl;
 	}
 
@@ -241,6 +242,160 @@ struct lix {
 		}
 	}
 
+	void push(reg v)
+	{
+		this->memory[this->registers[reg::SP]] = this->registers[v];
+		this->registers[reg::SP]++;
+	}
+
+	void pop(reg v)
+	{
+		this->registers[reg::SP]--;
+		this->registers[v] = this->memory[this->registers[reg::SP]];
+	}
+
+	void iretstub()
+	{
+		this->pop(reg::S4);
+		this->pop(reg::S1);
+		this->pop(reg::S0);
+		this->pop(reg::PC);
+	}
+
+	void intstub()
+	{
+		this->push(reg::PC);
+		this->push(reg::S0);
+		this->push(reg::S1);
+		this->push(reg::S4);
+	}
+
+	void exec_svc()
+	{
+		this->intstub();
+		this->registers[reg::S2] = prot::PROT_HI_0;
+		if (this->memory[this->registers[reg::LR] + this->arg0] == 0)
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
+		this->registers[reg::PC] = this->memory[this->registers[reg::LR] + this->arg0];
+	}
+
+	void exec_iretrg()
+	{
+		this->push((reg) this->arg1);
+		this->push(reg::S0);
+		this->push(reg::S1);
+		this->push(reg::S4);
+	}
+
+	bool exec_str()
+	{
+		if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) return false;
+
+		this->memory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
+		    (char) this->registers[(reg) this->arg1];
+#ifdef HW_SUP
+		if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
+			vgaputc(this->registers[(reg) this->arg1]);
+#endif
+		return true;
+	}
+
+	bool exec_strb()
+	{
+		if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) return false;
+
+		this->rmemory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
+		    (char) this->registers[(reg) this->arg1];
+#ifdef HW_SUP
+		if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
+			vgaputc(this->registers[(reg) this->arg1]);
+#endif
+		return true;
+	}
+
+	bool exec_ldrb()
+	{
+		if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 && this->arg0 != reg::S4)
+			this->registers[(reg) this->arg0] =
+			    this->rmemory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
+		else
+			return false;
+		return true;
+	}
+
+	bool exec_ldr()
+	{
+		if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 && this->arg0 != reg::S4)
+			this->registers[(reg) this->arg0] =
+			    this->memory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
+		else
+			return false;
+		return true;
+	}
+
+	void fault(excep e)
+	{
+		this->intstub();
+		this->registers[reg::S2] = prot::PROT_HI_0;
+		if (this->memory[this->registers[reg::LR] + e] == 0)
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
+		this->registers[reg::PC] = this->memory[this->registers[reg::LR] + e];
+	}
+
+	void exec_iret()
+	{
+		this->iretstub();
+		this->registers[reg::S2] = prot::PROT_LO_1;
+	}
+
+	void exec_cmp()
+	{
+		if (this->registers[(reg) this->arg0] > this->registers[(reg) this->arg1]) this->registers[reg::S1] = 1;
+		if (this->registers[(reg) this->arg0] < this->registers[(reg) this->arg1]) this->registers[reg::S1] = 2;
+		if (this->registers[(reg) this->arg0] == this->registers[(reg) this->arg1])
+			this->registers[reg::S1] = 0;
+	}
+
+	void exec_push()
+	{
+		this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
+		this->registers[reg::SP]++;
+	}
+
+	void exec_pop()
+	{
+		this->registers[reg::SP]--;
+		this->registers[(reg) this->arg0] = this->memory[this->registers[reg::SP]];
+	}
+
+	void exec_ret()
+	{
+		this->registers[reg::SP]--;
+		this->registers[reg::PC] = this->memory[this->registers[reg::SP]];
+	}
+
+	void exec_bl()
+	{
+		this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
+		this->registers[reg::SP]++;
+		this->registers[reg::PC] = this->arg0;
+	}
+
+	void exec_rbl()
+	{
+		this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
+		this->registers[reg::SP]++;
+		this->registers[reg::PC] = this->registers[(reg) this->arg0];
+	}
+
+	bool isclean()
+	{
+		return (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
+			this->arg0 != reg::S4);
+	}
+
+	void exec_b() { this->registers[reg::PC] = this->arg0; }
+
 	/**
 	 * @brief Executes the instruction in inst, arg0 and arg1
 	 */
@@ -261,24 +416,17 @@ struct lix {
 				this->registers[reg::S4] = this->arg0;
 				return;
 			case inst::IRET:
-				this->registers[reg::SP]--;
-				this->registers[reg::S4] = this->memory[this->registers[reg::SP]];
-				this->registers[reg::SP]--;
-				this->registers[reg::S1] = this->memory[this->registers[reg::SP]];
-				this->registers[reg::SP]--;
-				this->registers[reg::S0] = this->memory[this->registers[reg::SP]];
-				this->registers[reg::SP]--;
-				this->registers[reg::PC] = this->memory[this->registers[reg::SP]];
-				this->registers[reg::S2] = prot::PROT_LO_1;
+				this->exec_iret();
 				return;
+			case inst::HLT:
+				exit(1);
 			}
-		}
-
-		if (this->registers[reg::S2] == prot::PROT_LO_1) {
+		} else if (this->registers[reg::S2] == prot::PROT_LO_1) {
 			switch (this->inst) {
 			case inst::SVCSTR:
 			case inst::SWI:
 			case inst::IRET:
+			case inst::HLT:
 			case inst::ADRUM:
 			case inst::ADRBS:
 				goto prot_fault;
@@ -287,204 +435,116 @@ struct lix {
 
 		switch (this->inst) {
 		case inst::CMP:
-			if (this->registers[(reg) this->arg0] > this->registers[(reg) this->arg1])
-				this->registers[reg::S1] = 1;
-			if (this->registers[(reg) this->arg0] < this->registers[(reg) this->arg1])
-				this->registers[reg::S1] = 2;
-			if (this->registers[(reg) this->arg0] == this->registers[(reg) this->arg1])
-				this->registers[reg::S1] = 0;
-			break;
+			this->exec_cmp();
+			return;
 		case inst::NOP:
-			break;
-		case inst::HLT:
-			if (this->registers[reg::S2] == PROT_HI_0)
-				exit(0);
-			else
-				goto prot_fault;
+			return;
 		case inst::PUSH:
-			this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
-			this->registers[reg::SP]++;
-			break;
+			this->exec_push();
+			return;
 		case inst::POP:
-			this->registers[reg::SP]--;
-			this->registers[(reg) this->arg0] = this->memory[this->registers[reg::SP]];
-			break;
+			this->exec_pop();
+			return;
 		case inst::RBL:
-			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
-			this->registers[reg::SP]++;
-			this->registers[reg::PC] = this->registers[(reg) this->arg0];
-			break;
+			this->exec_rbl();
+			return;
 		case inst::BL:
-			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
-			this->registers[reg::SP]++;
-			this->registers[reg::PC] = this->arg0;
-			break;
+			this->exec_bl();
+			return;
 		case inst::RET:
-			this->registers[reg::SP]--;
-			this->registers[reg::PC] = this->memory[this->registers[reg::SP]];
-			break;
+			this->exec_ret();
+			return;
 		case inst::CPY:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1];
 			else
-				goto prot_fault;
-			break;
-		case inst::B:
-			this->registers[reg::PC] = this->arg0;
-			break;
-		case inst::BNZ:
-			if (this->registers[reg::S1] != 0) this->registers[reg::PC] = this->arg0;
-			break;
+				break;
+			return;
 		case inst::SVC:
-			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
-			this->registers[reg::SP]++;
-			this->registers[reg::S2] = prot::PROT_HI_0;
-			if (this->memory[this->registers[reg::LR] + this->arg0] == 0)
-				this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
-			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + this->arg0];
-			break;
+			this->exec_svc();
+			return;
+		case inst::B:
+			this->exec_b();
+			return;
+		case inst::BNZ:
+			if (this->registers[reg::S1] != 0) this->exec_b();
+			return;
 		case inst::BIZ:
-			if (this->registers[reg::S1] == 0) this->registers[reg::PC] = this->arg0;
-			break;
+			if (this->registers[reg::S1] == 0) this->exec_b();
+			return;
 		case inst::BIM:
-			if (this->registers[reg::S1] == 1) this->registers[reg::PC] = this->arg0;
-			break;
+			if (this->registers[reg::S1] == 1) this->exec_b();
+			return;
 		case inst::BIL:
-			if (this->registers[reg::S1] == 2) this->registers[reg::PC] = this->arg0;
-			break;
+			if (this->registers[reg::S1] == 2) this->exec_b();
+			return;
 		case inst::STR:
-			if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) goto prot_fault;
-
-			this->memory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
-			    (char) this->registers[(reg) this->arg1];
-#ifdef HW_SUP
-			if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
-				vgaputc(this->registers[(reg) this->arg1]);
-#endif
-			break;
+			if (!this->exec_str()) break;
+			return;
 		case inst::STRB:
-			if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) goto prot_fault;
-
-			this->rmemory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
-			    (char) this->registers[(reg) this->arg1];
-#ifdef HW_SUP
-			if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
-				vgaputc(this->registers[(reg) this->arg1]);
-#endif
-			break;
+			if (!this->exec_strb()) break;
+			return;
 		case inst::LDR:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
-				this->registers[(reg) this->arg0] =
-				    this->memory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
-			else
-				goto prot_fault;
-			break;
+			if (!this->exec_ldr()) break;
+			return;
 		case inst::LDRB:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
-				this->registers[(reg) this->arg0] =
-				    this->rmemory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
-			else
-				goto prot_fault;
-			break;
+			if (!this->exec_ldrb()) break;
+			return;
 		case inst::MOV:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0] = this->arg1;
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::INC:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0]++;
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::DEC:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0]--;
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::ADD:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0] =
 				    this->registers[(reg) this->arg0] + this->registers[(reg) this->arg1];
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::MUL:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0] =
 				    this->registers[(reg) this->arg0] * this->registers[(reg) this->arg1];
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::SUB:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0] =
 				    this->registers[(reg) this->arg0] - this->registers[(reg) this->arg1];
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::DIV:
-			if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			    this->arg0 != reg::S4)
+			if (this->isclean())
 				this->registers[(reg) this->arg0] =
 				    std::round(this->registers[(reg) this->arg0] / this->registers[(reg) this->arg1]);
 			else
-				goto prot_fault;
-			break;
+				break;
+			return;
 		case inst::IRETRG:
-			this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
-			this->registers[reg::SP]++;
-			break;
+			this->exec_iretrg();
+			return;
 		default:
-			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
-			this->registers[reg::SP]++;
-			this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
-			this->registers[reg::SP]++;
-			this->registers[reg::S2] = prot::PROT_HI_0;
-			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::INV_OPCODE];
-			break;
+			this->fault(excep::INV_OPCODE);
+			return;
 		}
-		return;
 	prot_fault:
-		this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
-		this->registers[reg::SP]++;
-		this->memory[this->registers[reg::SP]] = this->registers[reg::S0];
-		this->registers[reg::SP]++;
-		this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
-		this->registers[reg::SP]++;
-		this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
-		this->registers[reg::SP]++;
-		this->registers[reg::S2] = prot::PROT_HI_0;
-		if (this->memory[this->registers[reg::LR] + excep::PROT_FLT] == 0)
-			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
-		this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::PROT_FLT];
+		this->fault(excep::PROT_FLT);
 	}
 
 	void clearmem()
