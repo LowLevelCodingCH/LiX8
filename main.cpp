@@ -471,6 +471,6 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 	}
-	printf((char *) &(cpu.rmemory[1200]));
+	printf((char *) vgamem_at_the_end);
 	return 0;
 }
