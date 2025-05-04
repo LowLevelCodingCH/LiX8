@@ -5,7 +5,7 @@ C = $(COMP) $(ARGS)
 build:
 	$(C) lix16 main.cpp
 	$(C) lxsm  asm/simple.cpp
-	./lxsm test.s
+	./lxsm helloworld.s
 
 test: build
 	./lix16

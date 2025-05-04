@@ -178,11 +178,14 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 			return lbl->second;
 	}
 	try {
-		return std::stoi(token);
+		if (token[0] != '#') {
+			std::cerr << "Error: Unknown token " << token << std::endl;
+			std::exit(1);
+		}
+		return std::stoi((std::string)((char *) ((&token[0]) + 1)));
 	} catch (...) {
 		std::cerr << "Error: Unknown token " << token << std::endl;
 		std::exit(1);
-		return -1;
 	}
 }
 } // namespace lixasm
@@ -222,7 +225,9 @@ int main(int argc, char *argv[])
 	std::ofstream outfile("a.bin");
 	int i = 0;
 	std::unordered_map<std::string, int> lbls;
+	std::vector<std::string> gtokens;
 
+	// Pass 1: resolve labels
 	while (std::getline(file, line)) {
 		if (line[0] != '#') {
 			auto tokens = split(line, " \t,[]{}()");
@@ -234,15 +239,38 @@ int main(int argc, char *argv[])
 					std::pair<std::string, int> lblpair(token, i);
 					lbls.insert(lblpair);
 					continue;
-				} else if ("$" == token) {
-					output.push_back(i - 1);
-					continue;
 				}
-				output.push_back(lixasm::get_inst(token, lbls));
+				gtokens.push_back(token);
 				++i;
 			}
 		}
 	}
+
+	i = 0;
+
+	for (auto token : gtokens) {
+		if ("" == token) continue;
+
+		if (token.back() == ':') {
+			auto lbl = lbls.find(token);
+			if (lbl == lbls.end()) {
+				std::cout << "Could not find symbol " << token << std::endl;
+				std::exit(1);
+			}
+			output.push_back(lbl->second);
+			continue;
+		} else if ("$" == token) {
+			output.push_back(i - 1);
+			continue;
+		}
+		output.push_back(lixasm::get_inst(token, lbls));
+		++i;
+	}
+
+	for (auto a : lbls) {
+		std::cout << a.first << std::endl;
+	}
+
 	file.close();
 
 	outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));

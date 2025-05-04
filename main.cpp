@@ -21,10 +21,7 @@ enum excep {
 /**
  * @brief PROT_HI_0 is the highest priv
  */
-enum prot {
-	PROT_HI_0,
-	PROT_LO_1
-};
+enum prot { PROT_HI_0, PROT_LO_1 };
 
 enum reg {
 	PC,
@@ -285,7 +282,8 @@ struct lix {
 			this->registers[reg::PC] = this->arg0;
 			break;
 		case inst::RET:
-			this->registers[reg::PC] = this->memory[this->registers[reg::SP] - 1];
+			this->registers[reg::SP]--;
+			this->registers[reg::PC] = this->memory[this->registers[reg::SP]];
 			break;
 		case inst::CPY:
 			this->registers[(reg) this->arg0] = this->registers[(reg) this->arg1];
@@ -324,7 +322,7 @@ struct lix {
 			break;
 		case inst::STRB:
 			this->rmemory[this->registers[(reg) this->arg0]] =
-			    this->registers[(reg) this->arg1];
+			    (char) this->registers[(reg) this->arg1];
 			break;
 		case inst::LDR:
 			this->registers[(reg) this->arg0] =
@@ -332,7 +330,7 @@ struct lix {
 			break;
 		case inst::LDRB:
 			this->registers[(reg) this->arg0] =
-			    this->rmemory[this->registers[(reg) this->arg1]];
+			    (short) this->rmemory[this->registers[(reg) this->arg1]];
 			break;
 		case inst::MOV:
 			if (this->arg0 != reg::S2 && this->arg0 != reg::LR)
@@ -348,17 +346,16 @@ struct lix {
 			break;
 		case inst::ADD:
 			this->registers[(reg) this->arg0] =
-			    this->registers[(reg) this->arg1] + this->registers[(reg) this->arg0];
+			    this->registers[(reg) this->arg0] + this->registers[(reg) this->arg1];
 			break;
 		case inst::MUL:
 			this->registers[(reg) this->arg0] =
-			    this->registers[(reg) this->arg1] * this->registers[(reg) this->arg0];
+			    this->registers[(reg) this->arg0] * this->registers[(reg) this->arg1];
 			break;
 		case inst::SUB:
 			this->registers[(reg) this->arg0] =
-			    this->registers[(reg) this->arg1] - this->registers[(reg) this->arg0];
+			    this->registers[(reg) this->arg0] - this->registers[(reg) this->arg1];
 			break;
-		// Manually pushing (reg (arg1)) dont work so this works
 		case inst::IRETRG:
 			this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
 			this->registers[reg::SP]++;
@@ -374,6 +371,7 @@ struct lix {
 			this->registers[reg::SP]++;
 			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
 			this->registers[reg::SP]++;
+			this->registers[reg::S2] = prot::PROT_HI_0;
 			this->registers[reg::PC] =
 			    this->memory[this->registers[reg::LR] + excep::INV_OPCODE];
 			break;
@@ -425,7 +423,7 @@ struct lix {
 #define HW_SUP
 // #undef HW_SUP
 #define SGA_ADR                                                                                       \
-	0x2000 /* "Video card"'s ram would be attached there (MMIO.                                   \
+	1200 /* "Video card"'s ram would be attached there (MMIO.                                     \
 		  read more) */
 
 int main()
@@ -453,9 +451,21 @@ int main()
 		cpu.execute();
 		cpu.printinst();
 		getchar();
+		std::cout << "R0: " << cpu.registers[reg::L0] << std::endl;
+		std::cout << "R1: " << cpu.registers[reg::L1] << std::endl;
+		std::cout << "R2: " << cpu.registers[reg::L2] << std::endl;
+		std::cout << "R3: " << cpu.registers[reg::L3] << std::endl;
+		std::cout << "R4: " << cpu.registers[reg::L4] << std::endl;
+		std::cout << "R5: " << cpu.registers[reg::L5] << std::endl;
+		std::cout << "R6: " << cpu.registers[reg::L6] << std::endl;
+		std::cout << "R7: " << cpu.registers[reg::L7] << std::endl;
+		std::cout << "S2: " << cpu.registers[reg::S2] << std::endl;
+		std::cout << "SP: " << cpu.registers[reg::SP] << std::endl;
 		std::cout << "PC: " << cpu.registers[reg::PC] << std::endl;
+		std::cout << "PC/SV: " << cpu.memory[cpu.registers[reg::SP] - 3] << std::endl;
 		std::cout << "SV: " << cpu.memory[cpu.registers[reg::SP] - 1] << std::endl;
 	}
 
+	std::cout << (int) cpu.memory[1200] << std::endl;
 	return 0;
 }
