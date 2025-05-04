@@ -4,6 +4,9 @@
 #include <iostream>
 #include <sstream>
 
+#define HW_SUP
+// #undef HW_SUP
+
 /**
  * @author LowLevelCodingCH (Alex), 2025
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
@@ -11,6 +14,9 @@
 
 #define PROGLEN 256
 #define PROGADR 0
+// Not the vga buffer
+
+char vgamem_at_the_end[1200] = {0};
 
 enum excep {
 	INV_OPCODE,
@@ -117,6 +123,14 @@ std::string intoa(short i)
 	}
 }
 
+void vgaputc(short c)
+{
+	static int i	       = 0;
+	char ch		       = (char) c;
+	char fm		       = (char) (c << 8); // i think
+	vgamem_at_the_end[i++] = ch;		  // formatting gets ignored
+}
+
 /**
  * @struct lix
  * @brief A structure representing a simple virtual machine with
@@ -177,7 +191,7 @@ struct lix {
 	std::uint16_t inst;
 	std::uint16_t arg0;
 	std::uint16_t arg1;
-	std::uint8_t rmemory[16384]; // Not included by def
+	std::uint8_t rmemory[65536]; // Not included by def
 	std::uint16_t *memory;
 
 	/**
@@ -319,10 +333,22 @@ struct lix {
 		case inst::STR:
 			this->memory[this->registers[(reg) this->arg0]] =
 			    this->registers[(reg) this->arg1];
+#ifdef HW_SUP
+			if (this->registers[(reg) this->arg0] >= 1200 &&
+			    this->registers[(reg) this->arg0] <= 2400) {
+				vgaputc(this->registers[(reg) this->arg1]);
+			}
+#endif
 			break;
 		case inst::STRB:
 			this->rmemory[this->registers[(reg) this->arg0]] =
 			    (char) this->registers[(reg) this->arg1];
+#ifdef HW_SUP
+			if (this->registers[(reg) this->arg0] >= 1200 &&
+			    this->registers[(reg) this->arg0] <= 2400) {
+				vgaputc(this->registers[(reg) this->arg1]);
+			}
+#endif
 			break;
 		case inst::LDR:
 			this->registers[(reg) this->arg0] =
@@ -408,6 +434,7 @@ struct lix {
 		this->memory = (unsigned short *) &(this->rmemory[0]);
 		this->clearmem();
 		this->clearreg();
+		this->registers[reg::PC] = PROGADR;
 	}
 
 	void load(short *insts, int len)
@@ -419,12 +446,6 @@ struct lix {
 };
 
 // Li X 16 CPU
-
-#define HW_SUP
-// #undef HW_SUP
-#define SGA_ADR                                                                                       \
-	1200 /* "Video card"'s ram would be attached there (MMIO.                                     \
-		  read more) */
 
 int main()
 {
@@ -465,7 +486,5 @@ int main()
 		std::cout << "PC/SV: " << cpu.memory[cpu.registers[reg::SP] - 3] << std::endl;
 		std::cout << "SV: " << cpu.memory[cpu.registers[reg::SP] - 1] << std::endl;
 	}
-
-	std::cout << (int) cpu.memory[1200] << std::endl;
 	return 0;
 }
