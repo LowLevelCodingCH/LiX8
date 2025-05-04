@@ -12,7 +12,7 @@
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
  */
 
-#define PROGLEN 256
+#define PROGLEN 0x100
 #define PROGADR 0
 // Not the vga buffer
 
@@ -44,6 +44,7 @@ enum reg {
 	S0,
 	S1,
 	S2,
+	S3,
 };
 
 enum inst {
@@ -75,6 +76,7 @@ enum inst {
 	SWI,
 	SVC,
 	SVCSTR,
+	ADRUM,
 	IRET,
 	IRETRG,
 };
@@ -92,6 +94,7 @@ std::string intoa(short i)
 		cr(NOP);
 		cr(SVC);
 		cr(SVCSTR);
+		cr(ADRUM);
 		cr(CPY);
 		cr(STR);
 		cr(MOV);
@@ -187,7 +190,7 @@ void vgaputc(short c)
  * @param len The number of instructions to load.
  */
 struct lix {
-	std::uint16_t registers[14];
+	std::uint16_t registers[15];
 	std::uint16_t inst;
 	std::uint16_t arg0;
 	std::uint16_t arg1;
@@ -241,6 +244,9 @@ struct lix {
 			case inst::SWI:
 				this->registers[reg::S2] = this->arg0;
 				return;
+			case inst::ADRUM:
+				this->registers[reg::S3] = this->arg0;
+				return;
 			case inst::IRET:
 				this->registers[reg::SP]--;
 				this->registers[reg::S1] = this->memory[this->registers[reg::SP]];
@@ -260,6 +266,8 @@ struct lix {
 			case inst::SWI:
 				goto prot_fault;
 			case inst::IRET:
+				goto prot_fault;
+			case inst::ADRUM:
 				goto prot_fault;
 			}
 		}
@@ -331,23 +339,27 @@ struct lix {
 			if (this->registers[reg::S1] == 2) this->registers[reg::PC] = this->arg0;
 			break;
 		case inst::STR:
+			if (this->registers[(reg) this->arg0] < this->registers[reg::S3])
+				goto prot_fault;
+
 			this->memory[this->registers[(reg) this->arg0]] =
-			    this->registers[(reg) this->arg1];
+			    (char) this->registers[(reg) this->arg1];
 #ifdef HW_SUP
 			if (this->registers[(reg) this->arg0] >= 1200 &&
-			    this->registers[(reg) this->arg0] <= 2400) {
+			    this->registers[(reg) this->arg0] <= 2400)
 				vgaputc(this->registers[(reg) this->arg1]);
-			}
 #endif
 			break;
 		case inst::STRB:
+			if (this->registers[(reg) this->arg0] < this->registers[reg::S3])
+				goto prot_fault;
+
 			this->rmemory[this->registers[(reg) this->arg0]] =
 			    (char) this->registers[(reg) this->arg1];
 #ifdef HW_SUP
 			if (this->registers[(reg) this->arg0] >= 1200 &&
-			    this->registers[(reg) this->arg0] <= 2400) {
+			    this->registers[(reg) this->arg0] <= 2400)
 				vgaputc(this->registers[(reg) this->arg1]);
-			}
 #endif
 			break;
 		case inst::LDR:
@@ -425,7 +437,7 @@ struct lix {
 
 	void clearreg()
 	{
-		for (int i = 0; i < 14; i++)
+		for (int i = 0; i < 15; i++)
 			this->registers[i] = 0;
 	}
 
@@ -439,9 +451,8 @@ struct lix {
 
 	void load(short *insts, int len)
 	{
-		for (int i = 0; i < len; i++) {
+		for (int i = 0; i < len; i++)
 			this->memory[PROGADR + i] = insts[i];
-		}
 	}
 };
 
@@ -470,6 +481,7 @@ int main()
 		cpu.fetch();
 		if (cpu.inst == HLT) break;
 		cpu.execute();
+		cpu.printinst();
 	}
 	printf((char *) vgamem_at_the_end);
 	return 0;

@@ -28,6 +28,7 @@ enum reg {
 	S0,
 	S1,
 	S2,
+	S3,
 };
 
 enum inst {
@@ -66,6 +67,7 @@ enum inst {
 	SWI,
 	SVC,
 	SVCSTR,
+	ADRUM,
 	IRET,
 	IRETRG,
 };
@@ -140,6 +142,8 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return BNZ;
 	else if ("hlt" == token)
 		return HLT;
+	else if ("adrum" == token)
+		return ADRUM;
 	else if ("pc" == token)
 		return PC;
 	else if ("sp" == token)
@@ -216,18 +220,23 @@ std::vector<std::string> split(std::string string, char *delimiter)
 
 int main(int argc, char *argv[])
 {
-	if (argc != 2) exit(1);
+	if (argc != 2 && argc != 3) exit(1);
 
 	std::ifstream file(argv[1]);
 	std::string line;
 	std::stringstream text;
 	std::vector<short> output;
 	std::ofstream outfile("a.bin");
-	int i = 0;
+	int i = 0, tokmnt = 0;
+	bool pseudoclean = false;
 	std::unordered_map<std::string, int> lbls;
 	std::vector<std::string> gtokens;
 
+	if (argc == 3)
+		if (!strcasecmp(argv[2], "-Pc")) pseudoclean = true;
+
 	// Pass 1: resolve labels
+	std::cout << "Pass 1: Resolving labels and symbols" << std::endl;
 	while (std::getline(file, line)) {
 		if (line[0] != '#') {
 			auto tokens = split(line, " \t,[]{}()");
@@ -248,6 +257,8 @@ int main(int argc, char *argv[])
 
 	i = 0;
 
+	// Pass 2: resolve tokens
+	std::cout << "Pass 2: Resolving tokens" << std::endl;
 	for (auto token : gtokens) {
 		if ("" == token) continue;
 
@@ -264,11 +275,23 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		output.push_back(lixasm::get_inst(token, lbls));
+		++tokmnt;
 		++i;
 	}
 
-	for (auto a : lbls) {
-		std::cout << a.first << std::endl;
+	if (pseudoclean) {
+		std::cout
+		    << "Pass '3': Padding to 0x8000 and then putting in the labels at the end (-Pc)"
+		    << std::endl;
+
+		for (i = 0; i < 0x800 - tokmnt; i++)
+			output.push_back(0);
+
+		for (auto a : lbls) {
+			for (auto c : a.first)
+				output.push_back((short) c);
+			output.push_back(0);
+		}
 	}
 
 	file.close();
