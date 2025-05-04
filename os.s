@@ -151,6 +151,7 @@ init_kadrspce:
 # even in kernel mode. because im too lazy to check if were in kernel mode and then allow writes everywhere
 # so what we do is set it to 0 to be unable to write below it. to effectively make this fault impossible to reach
 # until we change the adr space
+# (INTEL HAS WORSE QUIRKS)
 # And adrbs sets the base address which gets added to the address of each str/ldr inst
 	adrbs #0 #0
 	adrum #0 #0
