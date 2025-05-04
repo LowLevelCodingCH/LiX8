@@ -5,6 +5,9 @@
 # It is because of my laziness though (not to exclude the : when parsing symbols)
 :
 
+# NOTE: add logging to all exceptions
+
+# Branches to init_sys: (bootstrapper)
 b_init:
 	b init_sys: #0
 
@@ -13,8 +16,9 @@ b_init:
 print:
 # Null terminated
 	mov r7, #0
-# MMIO adr for printing
+# Cursor so we dont overwrite previously written strings
 	mov r2, print_cursor:
+# MMIO adr for printing
 	mov r3, #1200
 	ldr r2, r0
 	add r2, r3
@@ -79,18 +83,26 @@ dbzero:
 # Double fault: when a fault doesnt exist (is 0) in the ivt and is trying to be called
 # Should halt.
 dfault:
+	adrbs #0 #0
 	adrum #0 #0
 	adrum #16384 #0
 	hlt #0 #0
 
 # Protection fault: when a process tries to execute privileged instructions in user mode
-# Also halts (PLEASE FUTURE ME MAKE THIS WORK BETTER)
 pfault:
+	adrbs #0 #0
 	adrum #0 #0
+# Prints a message
+	mov r0, pfault_msg:
+	bl print: #0
 	adrum #16384 #0
-	hlt #0 #0
+	iret #0 #0
 
 syscall:
+	adrbs #0 #0
+	adrum #0 #0
+# Syscall code: coming soon
+	adrum #16384 #0
 	iret #0 #0
 
 # Initializes the operating system
@@ -101,6 +113,8 @@ init_kadrspce:
 # even in kernel mode. because im too lazy to check if were in kernel mode and then allow writes everywhere
 # so what we do is set it to 0 to be unable to write below it. to effectively make this fault impossible to reach
 # until we change the adr space
+# And adrbs sets the base address which gets added to the address of each str/ldr inst
+	adrbs #0 #0
 	adrum #0 #0
 init_stck:
 # Initializes LR (interrupt vector (leap register)) and SP
@@ -122,6 +136,7 @@ finalize:
 
 init_umode:
 # Sets the usermode address
+	adrbs #0 #0
 	adrum #16384 #0
 
 # Switches to user mode (SWItch)
@@ -135,16 +150,7 @@ b_loop:
 
 # Will likely be a scheduler or sth
 kernel_loop:
-# Tests invalid opcode
-#	b kernel_loop: #0
-	mov r0, #1000
-	mov r1, #100
-
-	str r0, r1
-
-	mov r0, #20
-	mov r1, #30
-
+	b kernel_loop: #0
 	hlt #0 #0
 
 
@@ -166,6 +172,12 @@ sec_data_pad:
 # Then halts
 	hlt hlt hlt
 
+# Slots 0-3 are faults. invalid opcode, division by zero, double fault, protection fault
+# you can have up to 65536 interrupts. because that is the max addressing space.
+# Of course 65536 - OFFSET OF IVT.
+# if we have 32 bit well get
+# (about) 4BILLION - OFFSET OF IVT
+# and this scales.
 ivt:
 	iopcode:, dbzero:, dfault:,
 	pfault:, syscall:, #0,
@@ -177,6 +189,15 @@ print_cursor:
 	#0
 
 # Status strings
+
+pfault_msg:
+	#80 #114 #111
+	#116 #101 #99
+	#116 #105 #111
+	#110 #32 #70
+	#97 #117 #108
+	#116 #10 #0
+
 inited_str:
 	#73 #110 #105
 	#116 #105 #97
@@ -189,7 +210,7 @@ unused_vars:
 	#0 #0
 	#0 #0 #0
 
-# "OS" for My emulator: LiX8 (16 bit)
+# "OS" for My emulator: LiX8 (16 bit) (my own architecture)
 # Instructions are always 3 words (16 bits * 3 (48 bits)) long because i want it to be simple
 # here you just count the lines and then multiply by 3
 # In intel you gotta watch for prefixes, addresses of different sizes etc.

@@ -29,6 +29,7 @@ enum reg {
 	S1,
 	S2,
 	S3,
+	S4,
 };
 
 enum inst {
@@ -68,6 +69,7 @@ enum inst {
 	SVC,
 	SVCSTR,
 	ADRUM,
+	ADRBS,
 	IRET,
 	IRETRG,
 };
@@ -144,6 +146,8 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return HLT;
 	else if ("adrum" == token)
 		return ADRUM;
+	else if ("adrbs" == token)
+		return ADRBS;
 	else if ("pc" == token)
 		return PC;
 	else if ("sp" == token)
@@ -280,9 +284,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (pseudoclean) {
-		std::cout
-		    << "Pass '3': Padding to 0x8000 and then putting in the labels at the end (-Pc)"
-		    << std::endl;
+		std::cout << "Pass '3': Padding to 0x8000 and then putting in the labels at the end (-Pc)" << std::endl;
 
 		for (i = 0; i < 0x800 - tokmnt; i++)
 			output.push_back(0);

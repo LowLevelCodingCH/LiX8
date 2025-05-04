@@ -12,7 +12,7 @@
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
  */
 
-#define PROGLEN 0x100
+#define PROGLEN 0x3000
 #define PROGADR 0
 // Not the vga buffer
 
@@ -45,6 +45,7 @@ enum reg {
 	S1,
 	S2,
 	S3,
+	S4,
 };
 
 enum inst {
@@ -77,12 +78,13 @@ enum inst {
 	SVC,
 	SVCSTR,
 	ADRUM,
+	ADRBS,
 	IRET,
 	IRETRG,
 };
 
-#define cr(I)                                                                                         \
-	case I:                                                                                       \
+#define cr(I)                                                                                                          \
+	case I:                                                                                                        \
 		return #I
 /**
  * @brief Returns string name of an instruction
@@ -95,6 +97,7 @@ std::string intoa(short i)
 		cr(SVC);
 		cr(SVCSTR);
 		cr(ADRUM);
+		cr(ADRBS);
 		cr(CPY);
 		cr(STR);
 		cr(MOV);
@@ -190,11 +193,11 @@ void vgaputc(short c)
  * @param len The number of instructions to load.
  */
 struct lix {
-	std::uint16_t registers[15];
+	std::uint16_t registers[16];
 	std::uint16_t inst;
 	std::uint16_t arg0;
 	std::uint16_t arg1;
-	std::uint8_t rmemory[65536]; // Not included by def
+	std::uint8_t rmemory[0xFFFF]; // Not included by def
 	std::uint16_t *memory;
 
 	/**
@@ -212,8 +215,7 @@ struct lix {
 	 */
 	void printinst()
 	{
-		std::cout << intoa(this->inst) << " " << (int) this->arg0 << ", " << (int) this->arg1
-			  << std::endl;
+		std::cout << intoa(this->inst) << " " << (int) this->arg0 << ", " << (int) this->arg1 << std::endl;
 	}
 
 	/**
@@ -247,7 +249,12 @@ struct lix {
 			case inst::ADRUM:
 				this->registers[reg::S3] = this->arg0;
 				return;
+			case inst::ADRBS:
+				this->registers[reg::S4] = this->arg0;
+				return;
 			case inst::IRET:
+				this->registers[reg::SP]--;
+				this->registers[reg::S4] = this->memory[this->registers[reg::SP]];
 				this->registers[reg::SP]--;
 				this->registers[reg::S1] = this->memory[this->registers[reg::SP]];
 				this->registers[reg::SP]--;
@@ -262,12 +269,10 @@ struct lix {
 		if (this->registers[reg::S2] == prot::PROT_LO_1) {
 			switch (this->inst) {
 			case inst::SVCSTR:
-				goto prot_fault;
 			case inst::SWI:
-				goto prot_fault;
 			case inst::IRET:
-				goto prot_fault;
 			case inst::ADRUM:
+			case inst::ADRBS:
 				goto prot_fault;
 			}
 		}
@@ -323,10 +328,11 @@ struct lix {
 			this->registers[reg::SP]++;
 			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
 			this->registers[reg::SP]++;
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
+			this->registers[reg::SP]++;
 			this->registers[reg::S2] = prot::PROT_HI_0;
 			if (this->memory[this->registers[reg::LR] + this->arg0] == 0)
-				this->registers[reg::PC] =
-				    this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
+				this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
 			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + this->arg0];
 			break;
 		case inst::BIZ:
@@ -339,36 +345,32 @@ struct lix {
 			if (this->registers[reg::S1] == 2) this->registers[reg::PC] = this->arg0;
 			break;
 		case inst::STR:
-			if (this->registers[(reg) this->arg0] < this->registers[reg::S3])
-				goto prot_fault;
+			if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) goto prot_fault;
 
-			this->memory[this->registers[(reg) this->arg0]] =
+			this->memory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
 			    (char) this->registers[(reg) this->arg1];
 #ifdef HW_SUP
-			if (this->registers[(reg) this->arg0] >= 1200 &&
-			    this->registers[(reg) this->arg0] <= 2400)
+			if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
 				vgaputc(this->registers[(reg) this->arg1]);
 #endif
 			break;
 		case inst::STRB:
-			if (this->registers[(reg) this->arg0] < this->registers[reg::S3])
-				goto prot_fault;
+			if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) goto prot_fault;
 
-			this->rmemory[this->registers[(reg) this->arg0]] =
+			this->rmemory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
 			    (char) this->registers[(reg) this->arg1];
 #ifdef HW_SUP
-			if (this->registers[(reg) this->arg0] >= 1200 &&
-			    this->registers[(reg) this->arg0] <= 2400)
+			if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
 				vgaputc(this->registers[(reg) this->arg1]);
 #endif
 			break;
 		case inst::LDR:
 			this->registers[(reg) this->arg0] =
-			    this->memory[this->registers[(reg) this->arg1]];
+			    this->memory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
 			break;
 		case inst::LDRB:
 			this->registers[(reg) this->arg0] =
-			    (short) this->rmemory[this->registers[(reg) this->arg1]];
+			    (short) this->rmemory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
 			break;
 		case inst::MOV:
 			if (this->arg0 != reg::S2 && this->arg0 != reg::LR)
@@ -401,6 +403,8 @@ struct lix {
 			this->registers[reg::SP]++;
 			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
 			this->registers[reg::SP]++;
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
+			this->registers[reg::SP]++;
 			break;
 		default:
 			this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
@@ -409,9 +413,10 @@ struct lix {
 			this->registers[reg::SP]++;
 			this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
 			this->registers[reg::SP]++;
+			this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
+			this->registers[reg::SP]++;
 			this->registers[reg::S2] = prot::PROT_HI_0;
-			this->registers[reg::PC] =
-			    this->memory[this->registers[reg::LR] + excep::INV_OPCODE];
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::INV_OPCODE];
 			break;
 		}
 		return;
@@ -422,10 +427,11 @@ struct lix {
 		this->registers[reg::SP]++;
 		this->memory[this->registers[reg::SP]] = this->registers[reg::S1];
 		this->registers[reg::SP]++;
+		this->memory[this->registers[reg::SP]] = this->registers[reg::S4];
+		this->registers[reg::SP]++;
 		this->registers[reg::S2] = prot::PROT_HI_0;
 		if (this->memory[this->registers[reg::LR] + excep::PROT_FLT] == 0)
-			this->registers[reg::PC] =
-			    this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
 		this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::PROT_FLT];
 	}
 
@@ -437,7 +443,7 @@ struct lix {
 
 	void clearreg()
 	{
-		for (int i = 0; i < 15; i++)
+		for (int i = 0; i < 16; i++)
 			this->registers[i] = 0;
 	}
 
