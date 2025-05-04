@@ -470,21 +470,7 @@ int main()
 		cpu.fetch();
 		if (cpu.inst == HLT) break;
 		cpu.execute();
-		cpu.printinst();
-		getchar();
-		std::cout << "R0: " << cpu.registers[reg::L0] << std::endl;
-		std::cout << "R1: " << cpu.registers[reg::L1] << std::endl;
-		std::cout << "R2: " << cpu.registers[reg::L2] << std::endl;
-		std::cout << "R3: " << cpu.registers[reg::L3] << std::endl;
-		std::cout << "R4: " << cpu.registers[reg::L4] << std::endl;
-		std::cout << "R5: " << cpu.registers[reg::L5] << std::endl;
-		std::cout << "R6: " << cpu.registers[reg::L6] << std::endl;
-		std::cout << "R7: " << cpu.registers[reg::L7] << std::endl;
-		std::cout << "S2: " << cpu.registers[reg::S2] << std::endl;
-		std::cout << "SP: " << cpu.registers[reg::SP] << std::endl;
-		std::cout << "PC: " << cpu.registers[reg::PC] << std::endl;
-		std::cout << "PC/SV: " << cpu.memory[cpu.registers[reg::SP] - 3] << std::endl;
-		std::cout << "SV: " << cpu.memory[cpu.registers[reg::SP] - 1] << std::endl;
 	}
+	printf((char *) &(cpu.rmemory[1200]));
 	return 0;
 }

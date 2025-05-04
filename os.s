@@ -1,6 +1,25 @@
 b_init:
 	b init_sys: #0
 
+# Standard functions
+# Arg N: rN
+print:
+# Null terminated
+	mov r7, #0
+# MMIO adr for printing
+	mov r2, #1200
+print_loop:
+	ldr r3, r0
+	cmp r3, r7
+	biz print_end: #0
+	str r2, r3
+
+	inc r0 #0
+	inc r2 #0
+	b print_loop: #0
+print_end:
+	ret #0 #0
+
 clregs:
 	mov r0, #0
 	mov r1, #0
@@ -73,6 +92,13 @@ init_umode:
 # Switches to user mode
 	swi #1 #0
 
+print_init:
+	mov r0, inited_str:
+	bl print: #0
+
+finalize:
+	bl clregs: #0
+
 b_loop:
 	b kernel_loop: #0
 
@@ -81,11 +107,20 @@ ivt:
 	pfault:, syscall:, #0,
 	#0, #0, #0
 
+# Status strings
+inited_str:
+	#73 #110 #105
+	#116 #105 #97
+	#108 #105 #122
+	#101 #100 #10
+	#0 #0 #0
+
 # At this point i need to talk to "HDDs" etc. to load programs from disk to memory
 
 # Will likely be a scheduler or sth
 kernel_loop:
 # Tests invalid opcode
-	b kernel_loop: #0
+#	b kernel_loop: #0
+	hlt #0 #0
 
 # "OS" for My emulator: LiX8 (16 bit)
