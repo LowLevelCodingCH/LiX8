@@ -110,7 +110,7 @@ pfault:
 	adrbs #0 #0
 	adrum #0 #0
 	mov sp, #8192
-# Prints a message
+# Prints a Message
 	mov r0, pfault_msg:
 	bl print: #0
 	adrum #16384 #0
