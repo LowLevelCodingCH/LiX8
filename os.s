@@ -56,6 +56,11 @@ clregs:
 	mov r7, #0
 	ret #0 #0
 
+# WAIT: 3 things for reading and understanding this code better:
+# 1: read ALL comments. assembly becomes ASSembly otherwise and you wanna cripple
+# 2: read down there where it says "Just so you know variables". trust me, itll help-
+# 3: mov sp, #16388 is common after interrupts. it is just user_stack_pointer+4 (4 because svc and interrupts push 4 values)
+
 # Invalid opcode: just creates a noop, then skips over the code
 iopcode:
 	adrum #0 #0
