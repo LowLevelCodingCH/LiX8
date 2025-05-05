@@ -235,10 +235,45 @@ struct lix {
 		this->inst = this->memory[this->registers[reg::PC]];
 		this->arg0 = this->memory[this->registers[reg::PC] + 1];
 		this->arg1 = this->memory[this->registers[reg::PC] + 2];
-		this->registers[reg::PC] += 3;
-		if (this->registers[reg::PC] % 3) {
-			std::cerr << "PC is invalid. has to be divisible by 3" << std::endl;
-			std::abort();
+		this->registers[reg::PC]++;
+
+		switch (this->inst) {
+		case inst::ADD:
+		case inst::DIV:
+		case inst::SUB:
+		case inst::MUL:
+		case inst::LDR:
+		case inst::STR:
+		case inst::LDRB:
+		case inst::STRB:
+		case inst::CPY:
+		case inst::CMP:
+		case inst::MOV:
+			this->registers[reg::PC] += 2;
+			break;
+		case inst::INC:
+		case inst::DEC:
+		case inst::SWI:
+		case inst::SVC:
+		case inst::SVCSTR:
+		case inst::PUSH:
+		case inst::POP:
+		case inst::B:
+		case inst::BIZ:
+		case inst::BL:
+		case inst::RBL:
+		case inst::BIM:
+		case inst::BNZ:
+		case inst::BIL:
+		case inst::ADRBS:
+		case inst::ADRUM:
+		case inst::IRETRG:
+			this->registers[reg::PC] += 1;
+		case inst::NOP:
+		case inst::HLT:
+		case inst::IRET:
+		case inst::RET:
+			break;
 		}
 	}
 

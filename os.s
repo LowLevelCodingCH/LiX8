@@ -5,6 +5,9 @@
 # It is because of my laziness though (not to exclude the : when parsing symbols)
 :
 
+#####################
+###### TODO: remove useless args since emu handles them
+
 # WAIT: 3 things for reading and understanding this code better:
 # 1: read ALL comments. assembly becomes ASSembly otherwise and you wanna cripple
 # 2: read down there where it says "Just so you know variables". trust me, itll help-
@@ -20,14 +23,14 @@
 
 # Branches to init_sys: (bootstrapper)
 b_init:
-	b init_sys: #0
+	b init_sys:
 
 .wait:
 # For safety and debugging
-	hlt #0 #0
-	hlt #0 #0
-	hlt #0 #0
-	hlt #0 #0
+	hlt
+	hlt
+	hlt
+	hlt
 
 # Standard functions
 # Arg N: rN
@@ -43,18 +46,18 @@ print:
 print_loop:
 	ldr r3, r0
 	cmp r3, r7
-	biz print_end: #0
+	biz print_end:
 	str r2, r3
 
-	inc r0 #0
-	inc r2 #0
-	b print_loop: #0
+	inc r0
+	inc r2
+	b print_loop:
 print_end:
 	mov r3, #1200
 	sub r2, r3
-	dec r3 #0
+	dec r3
 	str r3, r2
-	ret #0 #0
+	ret
 
 clregs:
 	mov r0, #0
@@ -65,15 +68,15 @@ clregs:
 	mov r5, #0
 	mov r6, #0
 	mov r7, #0
-	ret #0 #0
+	ret
 
 # WAIT: did you read the WAIT comment a couple lines ago telling you to WAIT and read the $COMMENT
 
 # Invalid opcode: just creates a noop, then skips over the code
 iopcode:
 # Sets up correct bases and stuffs for kernel mode
-	adrum #0 #0
-	adrbs #0 #0
+	adrum #0
+	adrbs #0
 	cpy r5, sp
 
 	mov r1, #4
@@ -88,13 +91,13 @@ iopcode:
 	mov sp, #8192
 # Zeroes
 # Why increment? I dont fucking know. lets NOT find out
-	inc r0 #0
+	inc r0
 	str r0, r1
 
 # Return to user stack and stuff and bases
-	adrum #16384 #0
+	adrum #16384
 	cpy sp, r5
-	iret #0 #0
+	iret
 
 # Division by zero (e.g. 1/0) will clear all regs to 1
 dbzero:
@@ -102,8 +105,8 @@ dbzero:
 # Doesnt zero the code since it is kinda important
 	cpy r5, sp
 	mov sp, #8192
-	adrum #0 #0
-	adrbs #0 #0
+	adrum #0
+	adrbs #0
 
 	mov r0, #1
 	mov r1, #1
@@ -113,60 +116,60 @@ dbzero:
 	mov r6, #1
 	mov r7, #1
 
-	adrum #16384 #0
+	adrum #16384
 	cpy sp, r5
-	iret #0 #0
+	iret
 
 # Double fault: when a fault doesnt exist (is 0) in the ivt and is trying to be called
 # Should halt.
 dfault:
-	hlt #0 #0
+	hlt
 
 # Protection fault: when a process tries to execute privileged instructions in user mode
 pfault:
-	adrbs #0 #0
-	adrum #0 #0
+	adrbs #0
+	adrum #0
 	cpy r5, sp
 	mov sp, #8192
 
 # Prints a Message
 	mov r0, pfault_msg:
-	bl print: #0
+	bl print:
 
-	adrum #16384 #0
+	adrum #16384
 	cpy sp, r5
-	iret #0 #0
+	iret
 
 syscall:
 	cpy r5, sp
 	mov sp, #8192
-	adrbs #0 #0
-	adrum #0 #0
+	adrbs #0
+	adrum #0
 
 # r6 holds the syscall to be compared with
 	mov r6, #0
 	cmp r0, r6
-	biz .syscall_end: #0
+	biz .syscall_end:
 
 	mov r6, #1
 	cmp r0, r6
-	biz .syscall_print: #0
+	biz .syscall_print:
 
 .syscall_end:
 
-	adrum #16384 #0
+	adrum #16384
 	cpy sp, r5
-	iret #0 #0
+	iret
 
 .syscall_print:
 	cpy r0, r1
-	bl print: #0
-	b .syscall_end: #0
+	bl print:
+	b .syscall_end:
 
 # If any interrupts f' up we get here and loop
 .catch:
-	b $ #0
-	hlt #0 #0
+	b $
+	hlt
 
 # WAIT: did you read the WAIT comment a couple lines ago telling you to WAIT and read the $COMMENT which tells you to WAIT and read another $COMMENT-1
 
@@ -184,46 +187,46 @@ init_kadrspce:
 # until we change the adr space
 # (INTEL HAS WORSE QUIRKS)
 # And adrbs sets the base address which gets added to the address of each str/ldr inst
-	adrbs #0 #0
-	adrum #0 #0
+	adrbs #0
+	adrum #0
 init_stck:
 # Initializes LR (interrupt vector (leap register)) and SP
 # Stack grows upward (+), instead of downward (-) like in intel
 # Because i find the downwards thingy to be confusing af when dealing w/ lowlevel stuff
 	mov sp, #8192
-	svcstr ivt: #0
+	svcstr ivt:
 
 init_regs:
 # Initializes registers
-	bl clregs: #0
+	bl clregs:
 
 print_init:
 	mov r0, inited_str:
-	bl print: #0
+	bl print:
 
 finalize:
-	bl clregs: #0
+	bl clregs:
 
 init_umode:
 # Sets the usermode address
-	adrbs #0 #0
-	adrum #16384 #0
+	adrbs #0
+	adrum #16384
 	mov sp, #16384
 
 # Switches to user mode (SWItch)
 # Yes, we do have a mode bit and yes, the impl works
-	swi #1 #0
+	swi #1
 
 b_loop:
-	b kernel_loop: #0
+	b kernel_loop:
 
 # At this point i need to talk to "HDDs" etc. to load programs from disk to memory
 # Will likely be a scheduler or sth
 kernel_loop:
 	mov r0, #1
 	mov r1, hello_world_via_syscalls_from_usermode:
-	svc #4 #0
-	hlt #0 #0
+	svc #4
+	hlt
 
 # Padding because we dont want writes to the "data" section
 # (cpu doesnt rlly care. it doesnt see this as data but as noop noop noop noop...)
@@ -282,7 +285,7 @@ inited_str:
 	#116 #105 #97
 	#108 #105 #122
 	#101 #100 #10
-	#0 #0 #0
+	#0
 
 # PLEASE READ, OR ELSE YOU WONT UNDERSTAND SHIT: Just so you know variables
 usermode_address_space:
@@ -293,8 +296,13 @@ user_stack_pointer:
 	#16384
 
 unused_vars:
-# Only 2 because print_cursor takes 1 already
-	#0 #0
+	#0 #0 #0
+	#0 #0 #0
+	#0 #0 #0
+	#0 #0 #0
+	#0 #0 #0
+	#0 #0 #0
+	#0 #0 #0
 	#0 #0 #0
 
 # look at this
@@ -305,6 +313,3 @@ unused_vars:
 # 	r3 = arg3
 
 # "OS" for My emulator: LiX8 (16 bit) (my own architecture)
-# Instructions are always 3 words (16 bits * 3 (48 bits)) long because i want it to be simple
-# here you just count the lines and then multiply by 3
-# In intel you gotta watch for prefixes, addresses of different sizes etc.
