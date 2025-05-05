@@ -148,31 +148,31 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return ADRUM;
 	else if ("adrbs" == token)
 		return ADRBS;
-	else if ("%pc" == token)
+	else if ("pc" == token)
 		return PC;
-	else if ("%sp" == token)
+	else if ("sp" == token)
 		return SP;
-	else if ("%r0" == token)
+	else if ("r0" == token)
 		return L0;
-	else if ("%r1" == token)
+	else if ("r1" == token)
 		return L1;
-	else if ("%r2" == token)
+	else if ("r2" == token)
 		return L2;
-	else if ("%r3" == token)
+	else if ("r3" == token)
 		return L3;
-	else if ("%r4" == token)
+	else if ("r4" == token)
 		return L4;
-	else if ("%r5" == token)
+	else if ("r5" == token)
 		return L5;
-	else if ("%r6" == token)
+	else if ("r6" == token)
 		return L6;
-	else if ("%r7" == token)
+	else if ("r7" == token)
 		return L7;
-	else if ("%lr" == token)
+	else if ("lr" == token)
 		return LR;
-	else if ("%s1" == token)
+	else if ("s1" == token)
 		return S1;
-	else if ("%s0" == token)
+	else if ("s0" == token)
 		return S0;
 	else if ("" == token)
 		return 0;
@@ -186,11 +186,7 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 			return lbl->second;
 	}
 	try {
-		if (token[0] != '#') {
-			std::cerr << "Error: Unknown token " << token << std::endl;
-			std::exit(1);
-		}
-		return std::stoi((std::string)((char *) ((&token[0]) + 1)));
+		return std::stoi(token);
 	} catch (...) {
 		std::cerr << "Error: Unknown token " << token << std::endl;
 		std::exit(1);
