@@ -445,10 +445,10 @@ struct lix {
 				this->registers[reg::S2] = this->arg0;
 				return;
 			case inst::ADRUM:
-				this->registers[reg::S3] = this->registers[(reg) this->arg0];
+				this->registers[reg::S3] = this->memory[this->arg0];
 				return;
 			case inst::ADRBS:
-				this->registers[reg::S4] = this->registers[(reg) this->arg0];
+				this->registers[reg::S4] = this->memory[this->arg0];
 				return;
 			case inst::IRET:
 				this->exec_iret();
