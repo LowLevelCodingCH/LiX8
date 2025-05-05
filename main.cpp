@@ -445,10 +445,10 @@ struct lix {
 				this->registers[reg::S2] = this->arg0;
 				return;
 			case inst::ADRUM:
-				this->registers[reg::S3] = this->arg0;
+				this->registers[reg::S3] = this->registers[(reg) this->arg0];
 				return;
 			case inst::ADRBS:
-				this->registers[reg::S4] = this->arg0;
+				this->registers[reg::S4] = this->registers[(reg) this->arg0];
 				return;
 			case inst::IRET:
 				this->exec_iret();
@@ -639,6 +639,7 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
+		std::cout << cpu.registers[reg::SP] << std::endl;
 	}
 
 	printf((char *) vgamem_at_the_end);
