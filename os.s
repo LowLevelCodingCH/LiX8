@@ -138,16 +138,30 @@ pfault:
 	iret #0 #0
 
 syscall:
-	mov r5, sp
+	cpy r5, sp
 	mov sp, #8192
 	adrbs #0 #0
 	adrum #0 #0
 
-# Syscall code: coming soon
+# r6 holds the syscall to be compared with
+	mov r6, #0
+	cmp r0, r6
+	biz .syscall_end: #0
+
+	mov r6, #1
+	cmp r0, r6
+	biz .syscall_print: #0
+
+.syscall_end:
 
 	adrum #16384 #0
 	cpy sp, r5
 	iret #0 #0
+
+.syscall_print:
+	cpy r0, r1
+	bl print: #0
+	b .syscall_end: #0
 
 # If any interrupts f' up we get here and loop
 .catch:
@@ -206,7 +220,10 @@ b_loop:
 # At this point i need to talk to "HDDs" etc. to load programs from disk to memory
 # Will likely be a scheduler or sth
 kernel_loop:
-	b kernel_loop: #0
+	mov r0, #1
+	mov r1, hello_world_via_syscalls_from_usermode:
+	svc #4 #0
+	hlt #0 #0
 
 # Padding because we dont want writes to the "data" section
 # (cpu doesnt rlly care. it doesnt see this as data but as noop noop noop noop...)
@@ -242,6 +259,14 @@ ivt:
 print_cursor:
 	#0
 
+# Test strings
+
+hello_world_via_syscalls_from_usermode:
+	#72 #101 #108
+	#108 #111 #32
+	#87 #111 #114
+	#108 #100 #0
+
 # Status strings
 
 pfault_msg:
@@ -271,6 +296,13 @@ unused_vars:
 # Only 2 because print_cursor takes 1 already
 	#0 #0
 	#0 #0 #0
+
+# look at this
+# Syscalls:
+# 	r0 = syscall number
+# 	r1 = arg1
+# 	r2 = arg2
+# 	r3 = arg3
 
 # "OS" for My emulator: LiX8 (16 bit) (my own architecture)
 # Instructions are always 3 words (16 bits * 3 (48 bits)) long because i want it to be simple
