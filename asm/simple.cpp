@@ -148,31 +148,31 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return ADRUM;
 	else if ("adrbs" == token)
 		return ADRBS;
-	else if ("pc" == token)
+	else if ("%pc" == token)
 		return PC;
-	else if ("sp" == token)
+	else if ("%sp" == token)
 		return SP;
-	else if ("l0" == token || "r0" == token)
+	else if ("%r0" == token)
 		return L0;
-	else if ("l1" == token || "r1" == token)
+	else if ("%r1" == token)
 		return L1;
-	else if ("l2" == token || "r2" == token)
+	else if ("%r2" == token)
 		return L2;
-	else if ("l3" == token || "r3" == token)
+	else if ("%r3" == token)
 		return L3;
-	else if ("l4" == token || "r4" == token)
+	else if ("%r4" == token)
 		return L4;
-	else if ("l5" == token || "r5" == token)
+	else if ("%r5" == token)
 		return L5;
-	else if ("l6" == token || "r6" == token)
+	else if ("%r6" == token)
 		return L6;
-	else if ("l7" == token || "r7" == token)
+	else if ("%r7" == token)
 		return L7;
-	else if ("lr" == token)
+	else if ("%lr" == token)
 		return LR;
-	else if ("s1" == token)
+	else if ("%s1" == token)
 		return S1;
-	else if ("s0" == token)
+	else if ("%s0" == token)
 		return S0;
 	else if ("" == token)
 		return 0;

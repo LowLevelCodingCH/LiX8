@@ -1,3 +1,5 @@
+# OPERATION CODE, DESTINATION, SOURCE
+
 # : exists because then you can just do
 # b : #0
 # to restart.
@@ -11,15 +13,15 @@
 # WAIT: 3 things for reading and understanding this code better:
 # 1: read ALL comments. assembly becomes ASSembly otherwise and you wanna cripple
 # 2: read down there where it says "Just so you know variables". trust me, itll help-
-# 3: cpy sp, r5 is common after interrupts. it is just user_stack_pointer+sp+4 (r5 = reeserve sp) (4 because svc and interrupts push 4 values)
+# 3: cpy %sp, %r5 is common after interrupts. it is just user_stack_pointer+sp+4 (%r5 = reeserve sp) (4 because svc and interrupts push 4 values)
 #    so that we can return to the user stack
 
 # NOTE: add logging to all exceptions
 
-# NOTE: r0-r3 are arguments for funcs
-#       r4 is a usual counter
-#       r5 is a reserve stack pointer
-#       r6-r7 are more counters
+# NOTE: %r0-%r3 are arguments for funcs
+#       %r4 is a usual counter
+#       %r5 is a reserve stack pointer
+#       %r6-%r7 are more counters
 
 # Branches to init_sys: (bootstrapper)
 b_init:
@@ -36,38 +38,38 @@ b_init:
 # Arg N: rN
 print:
 # Null terminated
-	mov r7, #0
+	mov %r7, #0
 # Cursor so we dont overwrite previously written strings
-	mov r2, print_cursor:
+	mov %r2, print_cursor:
 # MMIO adr for printing
-	mov r3, #1200
-	ldr r2, r0
-	add r2, r3
+	mov %r3, #1200
+	ldr %r2, %r0
+	add %r2, %r3
 print_loop:
-	ldr r3, r0
-	cmp r3, r7
+	ldr %r3, %r0
+	cmp %r3, %r7
 	biz print_end:
-	str r2, r3
+	str %r2, %r3
 
-	inc r0
-	inc r2
+	inc %r0
+	inc %r2
 	b print_loop:
 print_end:
-	mov r3, #1200
-	sub r2, r3
-	dec r3
-	str r3, r2
+	mov %r3, #1200
+	sub %r2, %r3
+	dec %r3
+	str %r3, %r2
 	ret
 
 clregs:
-	mov r0, #0
-	mov r1, #0
-	mov r2, #0
-	mov r3, #0
-	mov r4, #0
-	mov r5, #0
-	mov r6, #0
-	mov r7, #0
+	mov %r0, #0
+	mov %r1, #0
+	mov %r2, #0
+	mov %r3, #0
+	mov %r4, #0
+	mov %r5, #0
+	mov %r6, #0
+	mov %r7, #0
 	ret
 
 # WAIT: did you read the WAIT comment a couple lines ago telling you to WAIT and read the $COMMENT
@@ -77,47 +79,47 @@ iopcode:
 # Sets up correct bases and stuffs for kernel mode
 	adrum #0
 	adrbs #0
-	cpy r5, sp
+	cpy %r5, %sp
 
-	mov r1, #4
-	sub sp, r1
+	mov %r1, #4
+	sub %sp, %r1
 
-	ldr r0, sp
-	sub r0, r1
-	add sp, r1
-	mov r1, #0
+	ldr %r0, %sp
+	sub %r0, %r1
+	add %sp, %r1
+	mov %r1, #0
 
 # Switches to kernel stack (make this get pushed or so)
-	mov sp, #8192
+	mov %sp, #8192
 # Zeroes
 # Why increment? I dont fucking know. lets NOT find out
-	inc r0
-	str r0, r1
+	inc %r0
+	str %r0, %r1
 
 # Return to user stack and stuff and bases
 	adrum #16384
-	cpy sp, r5
+	cpy %sp, %r5
 	iret
 
 # Division by zero (e.g. 1/0) will clear all regs to 1
 dbzero:
 # Sets all regs to 1 so that dbzero cant happen again
 # Doesnt zero the code since it is kinda important
-	cpy r5, sp
-	mov sp, #8192
+	cpy %r5, %sp
+	mov %sp, #8192
 	adrum #0
 	adrbs #0
 
-	mov r0, #1
-	mov r1, #1
-	mov r3, #1
-	mov r4, #1
-	mov r5, #1
-	mov r6, #1
-	mov r7, #1
+	mov %r0, #1
+	mov %r1, #1
+	mov %r3, #1
+	mov %r4, #1
+	mov %r5, #1
+	mov %r6, #1
+	mov %r7, #1
 
 	adrum #16384
-	cpy sp, r5
+	cpy %sp, %r5
 	iret
 
 # Double fault: when a fault doesnt exist (is 0) in the ivt and is trying to be called
@@ -129,40 +131,40 @@ dfault:
 pfault:
 	adrbs #0
 	adrum #0
-	cpy r5, sp
-	mov sp, #8192
+	cpy %r5, %sp
+	mov %sp, #8192
 
 # Prints a Message
-	mov r0, pfault_msg:
+	mov %r0, pfault_msg:
 	bl print:
 
 	adrum #16384
-	cpy sp, r5
+	cpy %sp, %r5
 	iret
 
 syscall:
-	cpy r5, sp
-	mov sp, #8192
+	cpy %r5, %sp
+	mov %sp, #8192
 	adrbs #0
 	adrum #0
 
-# r6 holds the syscall to be compared with
-	mov r6, #0
-	cmp r0, r6
+# %r6 holds the syscall to be compared with
+	mov %r6, #0
+	cmp %r0, %r6
 	biz .syscall_end:
 
-	mov r6, #1
-	cmp r0, r6
+	mov %r6, #1
+	cmp %r0, %r6
 	biz .syscall_print:
 
 .syscall_end:
 
 	adrum #16384
-	cpy sp, r5
+	cpy %sp, %r5
 	iret
 
 .syscall_print:
-	cpy r0, r1
+	cpy %r0, %r1
 	bl print:
 	b .syscall_end:
 
@@ -176,9 +178,9 @@ syscall:
 # Initializes the operating system
 init_sys:
 # If we jump to 0 we should halt (for safety and debugging)
-	mov r0, #0
-	mov r1, hlt
-	str r0, r1
+	mov %r0, #0
+	mov %r1, hlt
+	str %r0, %r1
 init_kadrspce:
 # So see this is a funny quirk: if the usermode address space is not 0 and we are in kernel mode
 # and we try to write somewhere below the usermode adr space we get a pfault.
@@ -193,7 +195,7 @@ init_stck:
 # Initializes LR (interrupt vector (leap register)) and SP
 # Stack grows upward (+), instead of downward (-) like in intel
 # Because i find the downwards thingy to be confusing af when dealing w/ lowlevel stuff
-	mov sp, #8192
+	mov %sp, #8192
 	svcstr ivt:
 
 init_regs:
@@ -201,7 +203,7 @@ init_regs:
 	bl clregs:
 
 print_init:
-	mov r0, inited_str:
+	mov %r0, inited_str:
 	bl print:
 
 finalize:
@@ -211,7 +213,7 @@ init_umode:
 # Sets the usermode address
 	adrbs #0
 	adrum #16384
-	mov sp, #16384
+	mov %sp, #16384
 
 # Switches to user mode (SWItch)
 # Yes, we do have a mode bit and yes, the impl works
@@ -223,8 +225,8 @@ b_loop:
 # At this point i need to talk to "HDDs" etc. to load programs from disk to memory
 # Will likely be a scheduler or sth
 kernel_loop:
-	mov r0, #1
-	mov r1, hello_world_via_syscalls_from_usermode:
+	mov %r0, #1
+	mov %r1, hello_world_via_syscalls_from_usermode:
 	svc #4
 	hlt
 
@@ -307,9 +309,9 @@ unused_vars:
 
 # look at this
 # Syscalls:
-# 	r0 = syscall number
-# 	r1 = arg1
-# 	r2 = arg2
-# 	r3 = arg3
+# 	%r0 = syscall number
+# 	%r1 = arg1
+# 	%r2 = arg2
+# 	%r3 = arg3
 
 # "OS" for My emulator: LiX8 (16 bit) (my own architecture)
