@@ -242,16 +242,24 @@ struct lix {
 		}
 	}
 
-	void push(reg v)
+	bool push(reg v)
 	{
-		this->memory[this->registers[reg::SP]] = this->registers[v];
-		this->registers[reg::SP]++;
+		if (this->isclean()) {
+			this->memory[this->registers[reg::SP]] = this->registers[v];
+			this->registers[reg::SP]++;
+		} else
+			return false;
+		return true;
 	}
 
-	void pop(reg v)
+	bool pop(reg v)
 	{
 		this->registers[reg::SP]--;
-		this->registers[v] = this->memory[this->registers[reg::SP]];
+		if (this->isclean())
+			this->registers[v] = this->memory[this->registers[reg::SP]];
+		else
+			return false;
+		return true;
 	}
 
 	void iretstub()
@@ -315,7 +323,7 @@ struct lix {
 
 	bool exec_ldrb()
 	{
-		if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 && this->arg0 != reg::S4)
+		if (this->isclean())
 			this->registers[(reg) this->arg0] =
 			    this->rmemory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
 		else
@@ -325,7 +333,7 @@ struct lix {
 
 	bool exec_ldr()
 	{
-		if (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 && this->arg0 != reg::S4)
+		if (this->isclean())
 			this->registers[(reg) this->arg0] =
 			    this->memory[this->registers[(reg) this->arg1] + this->registers[reg::S4]];
 		else
@@ -356,17 +364,9 @@ struct lix {
 			this->registers[reg::S1] = 0;
 	}
 
-	void exec_push()
-	{
-		this->memory[this->registers[reg::SP]] = this->registers[(reg) this->arg0];
-		this->registers[reg::SP]++;
-	}
+	void exec_push() { this->push((reg) this->arg0); }
 
-	void exec_pop()
-	{
-		this->registers[reg::SP]--;
-		this->registers[(reg) this->arg0] = this->memory[this->registers[reg::SP]];
-	}
+	void exec_pop() { this->pop((reg) this->arg0); }
 
 	void exec_ret()
 	{
@@ -378,14 +378,14 @@ struct lix {
 	{
 		this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 		this->registers[reg::SP]++;
-		this->registers[reg::PC] = this->arg0;
+		this->registers[reg::PC] = this->registers[reg::S4] + this->arg0;
 	}
 
 	void exec_rbl()
 	{
 		this->memory[this->registers[reg::SP]] = this->registers[reg::PC];
 		this->registers[reg::SP]++;
-		this->registers[reg::PC] = this->registers[(reg) this->arg0];
+		this->registers[reg::PC] = this->registers[reg::S4] + this->registers[(reg) this->arg0];
 	}
 
 	bool isclean()
@@ -394,7 +394,7 @@ struct lix {
 			this->arg0 != reg::S4);
 	}
 
-	void exec_b() { this->registers[reg::PC] = this->arg0; }
+	void exec_b() { this->registers[reg::PC] = this->registers[reg::S4] + this->arg0; }
 
 	/**
 	 * @brief Executes the instruction in inst, arg0 and arg1
