@@ -11,7 +11,7 @@ buildhw:
 build:
 	$(C) lix16 main.cpp
 	$(C) lxsm  asm/simple.cpp
-	./lxsm os.s -Pc
+	./lxsm os.s
 
 testhw: buildhw
 	./lix16

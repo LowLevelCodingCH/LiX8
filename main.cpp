@@ -530,10 +530,12 @@ struct lix {
 				break;
 			return;
 		case inst::DIV:
-			if (this->isclean())
-				this->registers[(reg) this->arg0] =
+			if (this->isclean()) {
+				this->registers[reg::L6] =
 				    std::round(this->registers[(reg) this->arg0] / this->registers[(reg) this->arg1]);
-			else
+				this->registers[reg::L7] =
+				    this->registers[(reg) this->arg0] % this->registers[(reg) this->arg1];
+			} else
 				break;
 			return;
 		case inst::IRETRG:

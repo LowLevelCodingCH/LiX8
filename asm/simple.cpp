@@ -230,6 +230,7 @@ int main(int argc, char *argv[])
 	std::string line;
 	std::stringstream text;
 	std::vector<short> output;
+	std::vector<short> hdr;
 	std::ofstream outfile("a.bin");
 	int i = 0, tokmnt = 0;
 	bool pseudoclean = false;
@@ -261,6 +262,18 @@ int main(int argc, char *argv[])
 
 	i = 0;
 
+	if (pseudoclean) {
+		for (auto a : ".lix(CPUi)::executable=$")
+			hdr.push_back((short) a);
+
+		// section .code begin
+		hdr.push_back(24 /* size of header string (wstring) */ + 1 + 7 + 1);
+
+		for (auto a : ".code$$")
+			output.push_back((short) a);
+		output.push_back(0);
+	}
+
 	// Pass 2: resolve tokens
 	std::cout << "Pass 2: Resolving tokens" << std::endl;
 	for (auto token : gtokens) {
@@ -285,9 +298,9 @@ int main(int argc, char *argv[])
 	}
 
 	if (pseudoclean) {
-		std::cout << "Pass '3': Padding to 8192 and then putting in the labels at the end (-Pc)" << std::endl;
+		std::cout << "Pass '3': Padding to 16384 and then putting in the labels at the end (-Pc)" << std::endl;
 
-		for (i = 0; i < 8192 - tokmnt; i++)
+		for (i = 0; i < 16384 - tokmnt; i++)
 			output.push_back(0);
 
 		// That if it ever gets here it stops
@@ -295,11 +308,11 @@ int main(int argc, char *argv[])
 		output.push_back(0);
 		output.push_back(0);
 
-		for (auto a : ".datasec$__PASS3$ignoredbycpu")
-			output.push_back((short) a);
-		output.push_back(0);
+		hdr.push_back(0xfc);
+		// section .symtab begin
+		hdr.push_back(24 + 1 + 7 + 1 + 16384 + 7 + 1 + 3);
 
-		for (auto a : ".symtab$__PASS3$ignoredbycpu")
+		for (auto a : ".symtab")
 			output.push_back((short) a);
 
 		for (auto a : lbls) {
@@ -313,6 +326,9 @@ int main(int argc, char *argv[])
 
 	file.close();
 
-	outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
+	for (auto e : output)
+		hdr.push_back(e);
+
+	outfile.write(reinterpret_cast<char *>(hdr.data()), hdr.size() * sizeof(short));
 	outfile.close();
 }
