@@ -12,6 +12,11 @@
 
 # NOTE: add logging to all exceptions
 
+# NOTE: r0-r3 are arguments for funcs
+#       r4 is a usual counter
+#       r5 is a reserve stack pointer
+#       r6-r7 are more counters
+
 # Branches to init_sys: (bootstrapper)
 b_init:
 	b init_sys: #0
@@ -65,9 +70,11 @@ clregs:
 
 # Invalid opcode: just creates a noop, then skips over the code
 iopcode:
+# Sets up correct bases and stuffs for kernel mode
 	adrum #0 #0
 	adrbs #0 #0
-	cpy r2, sp
+	cpy r5, sp
+
 	mov r1, #4
 	sub sp, r1
 
@@ -75,23 +82,28 @@ iopcode:
 	sub r0, r1
 	add sp, r1
 	mov r1, #0
+
+# Switches to kernel stack (make this get pushed or so)
 	mov sp, #8192
 # Zeroes
 # Why increment? I dont fucking know. lets NOT find out
 	inc r0 #0
 	str r0, r1
+
+# Return to user stack and stuff and bases
 	adrum #16384 #0
-	cpy sp, r2
+	cpy sp, r5
 	iret #0 #0
 
 # Division by zero (e.g. 1/0) will clear all regs to 1
 dbzero:
 # Sets all regs to 1 so that dbzero cant happen again
 # Doesnt zero the code since it is kinda important
-	cpy r2, sp
+	cpy r5, sp
 	mov sp, #8192
 	adrum #0 #0
 	adrbs #0 #0
+
 	mov r0, #1
 	mov r1, #1
 	mov r3, #1
@@ -99,8 +111,9 @@ dbzero:
 	mov r5, #1
 	mov r6, #1
 	mov r7, #1
+
 	adrum #16384 #0
-	cpy sp, r2
+	cpy sp, r5
 	iret #0 #0
 
 # Double fault: when a fault doesnt exist (is 0) in the ivt and is trying to be called
@@ -112,23 +125,27 @@ dfault:
 pfault:
 	adrbs #0 #0
 	adrum #0 #0
-	cpy r2, sp
+	cpy r5, sp
 	mov sp, #8192
+
 # Prints a Message
 	mov r0, pfault_msg:
 	bl print: #0
+
 	adrum #16384 #0
-	cpy sp, r2
+	cpy sp, r5
 	iret #0 #0
 
 syscall:
-	cpy r2, sp
+	mov r5, sp
 	mov sp, #8192
 	adrbs #0 #0
 	adrum #0 #0
+
 # Syscall code: coming soon
+
 	adrum #16384 #0
-	cpy sp, r2
+	cpy sp, r5
 	iret #0 #0
 
 # If any interrupts f' up we get here and halt
@@ -185,7 +202,6 @@ b_loop:
 	b kernel_loop: #0
 
 # At this point i need to talk to "HDDs" etc. to load programs from disk to memory
-
 # Will likely be a scheduler or sth
 kernel_loop:
 	b kernel_loop: #0
