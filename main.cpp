@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 #include <sstream>
 #include <string>
 
@@ -636,7 +637,6 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
-		std::cout << cpu.registers[reg::L0] << std::endl;
 	}
 
 	printf((char *) vgamem_at_the_end);

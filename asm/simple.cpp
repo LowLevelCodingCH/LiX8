@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <unordered_map>
 #include <vector>
 /**
@@ -217,25 +218,7 @@ std::vector<std::string> split(std::string string, char *delimiter)
 	return result;
 }
 
-enum lhtype {
-	TINVAL,
-	LIX_8_16,
-};
 
-struct lxe_hdr {
-	short lh_magic[3];
-	short lh_type;
-	short lh_sec_code_begin;
-	short lh_sec_data_begin;
-	short lh_sec_symtab_begin;
-	short lh_symtb_entries;
-};
-
-struct lix_exe_symtb_entry {
-	short name[256];
-	short null_byte;
-	short symbegin;
-};
 
 int main(int argc, char *argv[])
 {
@@ -253,7 +236,6 @@ int main(int argc, char *argv[])
 	bool data	 = false;
 	std::unordered_map<std::string, int> lbls;
 	std::vector<std::string> gtokens;
-	std::vector<std::string> ktokens;
 	int datsec = 0;
 	int codsec = 0;
 	bool indat = false;
@@ -277,15 +259,13 @@ int main(int argc, char *argv[])
 			}
 
 			if (tokens[0].back() == ':') {
-				int sec = i;
-				if (indat)
-					sec = j + datsec;
-				else
-					sec = i + codsec;
-
-				std::pair<std::string, int> lblpair(token, sec);
-
-				lbls.insert(lblpair);
+				if (indat) {
+					std::pair<std::string, int> lblpair(token, i + datsec);
+					lbls.insert(lblpair);
+				} else {
+					std::pair<std::string, int> lblpair(token, i + codsec);
+					lbls.insert(lblpair);
+				}
 				continue;
 			}
 
