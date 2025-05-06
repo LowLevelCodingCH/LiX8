@@ -6,10 +6,24 @@
 #include <unistd.h>
 #include <vector>
 
+using namespace std;
+
 enum lhtype {
 	TINVAL,
 	LIX_8_16,
 };
+
+string lhtypetos(lhtype t)
+{
+	switch (t) {
+	case lhtype::TINVAL:
+		return "(INVALID)";
+	case lhtype::LIX_8_16:
+		return "(LIX-8/16)";
+	default:
+		return "(INVALID)";
+	}
+}
 
 struct lxe_hdr {
 	short lh_magic[3];
@@ -25,8 +39,6 @@ struct lix_exe_symtb_entry {
 	short null_byte;
 	short symbegin;
 } __attribute__((packed));
-
-using namespace std;
 
 // When im 18 my parents said i can reveal my full name
 #define COPYRIGHT                                                                                                      \
@@ -87,7 +99,7 @@ int main(int argc, char **argv)
 
 	wcout << "Magic                 " << (wchar_t) hdr.lh_magic[0] << (wchar_t) hdr.lh_magic[1]
 	      << (wchar_t) hdr.lh_magic[2] << endl;
-	cout << "Type                  " << hdr.lh_type << endl;
+	cout << "Type                  " << hdr.lh_type << " " << lhtypetos((lhtype) hdr.lh_type) << endl;
 	cout << "Section .code begin   " << hdr.lh_sec_code_begin << endl;
 	cout << "Section .data begin   " << hdr.lh_sec_data_begin << endl;
 	cout << "Section .symtab begin " << hdr.lh_sec_symtab_begin << endl;
