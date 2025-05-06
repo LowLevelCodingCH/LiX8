@@ -636,8 +636,6 @@ int main()
 		if (cpu.inst == HLT) break;
 		cpu.execute();
 		cpu.printinst();
-		std::cout << cpu.registers[reg::SP] << std::endl;
-		std::cout << cpu.registers[reg::S4] << std::endl;
 		std::cout << cpu.registers[reg::L0] << std::endl;
 	}
 

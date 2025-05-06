@@ -4,7 +4,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 /**
  * @author LowLevelCodingCH (Alex), 2025
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
@@ -249,12 +248,16 @@ int main(int argc, char *argv[])
 	std::vector<short> hdr;
 	lxe_hdr ehdr;
 	std::ofstream outfile("a.bin");
-	int i = 0, tokmnt = 0;
+	int i = 0, tokmnt = 0, j = 0;
 	bool pseudoclean = false;
 	bool data	 = false;
 	std::unordered_map<std::string, int> lbls;
 	std::vector<std::string> gtokens;
 	std::vector<std::string> ktokens;
+	int datsec = 0;
+	int codsec = 0;
+	bool indat = false;
+	codsec	   = sizeof(lxe_hdr) / 2;
 
 	if (argc == 3)
 		if (!strcasecmp(argv[2], "-Pc")) pseudoclean = true;
@@ -267,17 +270,32 @@ int main(int argc, char *argv[])
 
 		for (auto token : tokens) {
 			if ("" == token) continue;
+			if (".data" == token) {
+				datsec = i + (sizeof(lxe_hdr) / 2);
+				indat  = true;
+				continue;
+			}
 
 			if (tokens[0].back() == ':') {
-				std::pair<std::string, int> lblpair(token, i);
+				int sec = i;
+				if (indat)
+					sec = j + datsec;
+				else
+					sec = i + codsec;
+
+				std::pair<std::string, int> lblpair(token, sec);
+
 				lbls.insert(lblpair);
 				continue;
 			}
 
 			gtokens.push_back(token);
 			++i;
+			if (indat) j++;
 		}
 	}
+
+	indat = false;
 
 	i = 0;
 
@@ -289,6 +307,7 @@ int main(int argc, char *argv[])
 
 		// section .code begin
 		hdr.push_back(sizeof(lxe_hdr) / 2);
+		codsec = sizeof(lxe_hdr) / 2;
 	}
 
 	// Pass 2: resolve tokens
@@ -297,7 +316,9 @@ int main(int argc, char *argv[])
 		if ("" == token) continue;
 
 		if (".data" == token) {
-			if (pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr) / 2));
+			hdr.push_back(i + (sizeof(lxe_hdr) / 2));
+			datsec = i + (sizeof(lxe_hdr) / 2);
+			indat  = true;
 			continue;
 		}
 
@@ -326,15 +347,17 @@ int main(int argc, char *argv[])
 		// That if it ever gets here it stops
 		output.push_back((short) HLT);
 
+		i += (sizeof(lxe_hdr) / 2) + 1;
+		hdr.push_back(datsec);
 		// section .symtab begin
-		hdr.push_back(i + (sizeof(lxe_hdr) / 2) + 1);
+		hdr.push_back(i);
 
 		short j = 0;
 
 		for (auto a : lbls) {
 			for (auto c : a.first)
 				output.push_back((short) c);
-			for (int i = 0; i < 256 - a.first.size(); i++)
+			for (i = 0; i < 256 - a.first.size(); i++)
 				output.push_back(0);
 			output.push_back(0);
 			output.push_back(a.second);
