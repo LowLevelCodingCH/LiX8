@@ -98,15 +98,15 @@ int main(int argc, char **argv)
 
 	vector<lix_exe_symtb_entry> entries = read_symtb_entries(fd, hdr);
 
-	wcout << "Magic                 " << (wchar_t) hdr.lh_magic[0] << (wchar_t) hdr.lh_magic[1]
-	      << (wchar_t) hdr.lh_magic[2] << endl;
-	cout << "Type                  " << hdr.lh_type << " " << lhtypetos((lhtype) hdr.lh_type) << endl;
-	cout << "Section .code begin   " << hdr.lh_sec_code_begin << endl;
-	cout << "Section .data begin   " << hdr.lh_sec_data_begin << endl;
-	cout << "Section .symtab begin " << hdr.lh_sec_symtab_begin << endl;
-	cout << "Symtab Entry Amount   " << hdr.lh_symtb_entries << endl;
-	cout << endl;
-	cout << "Symtab entries" << endl;
+	cout << "Magic                 " << (char) hdr.lh_magic[0] << (char) hdr.lh_magic[1]
+	      << (char) hdr.lh_magic[2] << "\n";
+	cout << "Type                  " << (int) hdr.lh_type << " " << (string) lhtypetos((lhtype) hdr.lh_type) << "\n";
+	cout << "Section .code begin   " << (int) hdr.lh_sec_code_begin << "\n";
+	cout << "Section .data begin   " << (int) hdr.lh_sec_data_begin << "\n";
+	cout << "Section .symtab begin " << (int) hdr.lh_sec_symtab_begin << "\n";
+	cout << "Symtab Entry Amount   " << (int) hdr.lh_symtb_entries << "\n";
+	cout << "\n";
+	cout << "Symtab entries" << "\n";
 
 	for (const auto &entry : entries) {
 		int i = 0;
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 			wcout << (wchar_t) entry.name[i];
 			++i;
 		}
-		cout << endl << "                  " << entry.symbegin << endl;
+		cout << "\n" << "                  " << entry.symbegin << endl;
 	}
 
 	(void) close(fd);

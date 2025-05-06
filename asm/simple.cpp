@@ -218,7 +218,19 @@ std::vector<std::string> split(std::string string, char *delimiter)
 	return result;
 }
 
+enum lhtype {
+	TINVAL,
+	LIX_8_16,
+};
 
+struct lxe_hdr {
+	short lh_magic[3];
+	short lh_type,
+	      lh_sec_code_begin,
+	      lh_sec_data_begin,
+	      lh_sec_symtab_begin,
+	      lh_symtb_entries;
+};
 
 int main(int argc, char *argv[])
 {
@@ -250,22 +262,21 @@ int main(int argc, char *argv[])
 		if (line[0] == '#') continue;
 		auto tokens = split(line, " \t,[]{}()");
 
+		if (!tokens[0].empty()) {
+			if (tokens[0].back() == ':') {
+				if (indat)
+					lbls.insert(std::pair<std::string, int>(tokens[0], i + datsec));
+				else
+					lbls.insert(std::pair<std::string, int>(tokens[0], i + codsec));
+				continue;
+			}
+		}
+
 		for (auto token : tokens) {
 			if ("" == token) continue;
 			if (".data" == token) {
 				datsec = i + (sizeof(lxe_hdr) / 2);
 				indat  = true;
-				continue;
-			}
-
-			if (tokens[0].back() == ':') {
-				if (indat) {
-					std::pair<std::string, int> lblpair(token, i + datsec);
-					lbls.insert(lblpair);
-				} else {
-					std::pair<std::string, int> lblpair(token, i + codsec);
-					lbls.insert(lblpair);
-				}
 				continue;
 			}
 
