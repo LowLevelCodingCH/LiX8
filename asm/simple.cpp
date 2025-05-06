@@ -218,6 +218,26 @@ std::vector<std::string> split(std::string string, char *delimiter)
 	return result;
 }
 
+enum lhtype {
+	TINVAL,
+	LIX_8_16,
+};
+
+struct lxe_hdr {
+	short lh_magic[3];
+	short lh_type;
+	short lh_sec_code_begin;
+	short lh_sec_data_begin;
+	short lh_sec_symtab_begin;
+	short lh_symtb_entries;
+};
+
+struct lix_exe_symtb_entry {
+	short name[256];
+	short null_byte;
+	short symbegin;
+};
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2 && argc != 3) exit(1);
@@ -227,11 +247,14 @@ int main(int argc, char *argv[])
 	std::stringstream text;
 	std::vector<short> output;
 	std::vector<short> hdr;
+	lxe_hdr ehdr;
 	std::ofstream outfile("a.bin");
 	int i = 0, tokmnt = 0;
 	bool pseudoclean = false;
+	bool data	 = false;
 	std::unordered_map<std::string, int> lbls;
 	std::vector<std::string> gtokens;
+	std::vector<std::string> ktokens;
 
 	if (argc == 3)
 		if (!strcasecmp(argv[2], "-Pc")) pseudoclean = true;
@@ -259,21 +282,24 @@ int main(int argc, char *argv[])
 	i = 0;
 
 	if (pseudoclean) {
-		for (auto a : ".lix(CPUi)::executable=$")
-			hdr.push_back((short) a);
+		for (auto a : "lxe")
+			if (a) hdr.push_back((short) a);
+
+		hdr.push_back((short) lhtype::LIX_8_16);
 
 		// section .code begin
-		hdr.push_back(24 /* size of header string (wstring) */ + 1 + 7 + 1);
-
-		for (auto a : ".code$$")
-			output.push_back((short) a);
-		output.push_back(0);
+		hdr.push_back(sizeof(lxe_hdr) / 2);
 	}
 
 	// Pass 2: resolve tokens
 	std::cout << "Pass 2: Resolving tokens" << std::endl;
 	for (auto token : gtokens) {
 		if ("" == token) continue;
+
+		if (".data" == token) {
+			if (pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr) / 2));
+			continue;
+		}
 
 		if (token.back() == ':') {
 			auto lbl = lbls.find(token);
@@ -282,6 +308,7 @@ int main(int argc, char *argv[])
 				std::exit(1);
 			}
 			output.push_back(lbl->second);
+			++i;
 			continue;
 		} else if ("$" == token) {
 			output.push_back(i - 1);
@@ -294,30 +321,28 @@ int main(int argc, char *argv[])
 	}
 
 	if (pseudoclean) {
-		std::cout << "Pass '3': Padding to 16384 and then putting in the labels at the end (-Pc)" << std::endl;
-
-		for (i = 0; i < 16384 - tokmnt; i++)
-			output.push_back(0);
+		std::cout << "Pass 3" << std::endl;
 
 		// That if it ever gets here it stops
 		output.push_back((short) HLT);
-		output.push_back(0);
-		output.push_back(0);
 
-		hdr.push_back(0xfc);
 		// section .symtab begin
-		hdr.push_back(24 + 1 + 7 + 1 + 16384 + 7 + 1 + 3);
+		hdr.push_back(i + (sizeof(lxe_hdr) / 2) + 1);
 
-		for (auto a : ".symtab")
-			output.push_back((short) a);
+		short j = 0;
 
 		for (auto a : lbls) {
 			for (auto c : a.first)
 				output.push_back((short) c);
+			for (int i = 0; i < 256 - a.first.size(); i++)
+				output.push_back(0);
 			output.push_back(0);
 			output.push_back(a.second);
-			output.push_back(0);
+			j++;
 		}
+
+		// symtab entries
+		hdr.push_back(j);
 	}
 
 	file.close();

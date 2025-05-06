@@ -27,9 +27,50 @@ print::loop:
 print::end:
 	ret
 
+invopc:
+	adrum kas:
+	adrbs kas:
+
+	mov r1, 4
+	sub sp, r1
+	ldr r0, sp
+	add sp, r1
+	mov r1, 1
+	sub r0, r1
+	mov r1, 0
+	str r0, r1
+
+	adrum uas:
+	adrbs uas:
+	iret
+
+init:
+	svcstr ivt:
+	adrum kas:
+	adrbs kas:
+
+	mov sp, ksp:
+	ldr sp, sp
+
+	adrum uas:
+	adrbs uas:
+
+	mov sp, usp:
+	ldr sp, sp
+
+	swi 1
+
+	hlt
+
+.data
+
+finddat:
+	65, 69, 105
+# Aie
+
 ivt:
 # Exceptions
-	0, 0, 0, 0,
+	invopc:, 0, 0, 0,
 # Syscall
 	0,
 
@@ -49,12 +90,3 @@ usp:
 	16384
 uas:
 	16384
-
-init:
-	svcstr ivt:
-	adrum kas:
-	adrbs kas:
-	mov sp, ksp:
-	ldr sp, sp
-
-	hlt

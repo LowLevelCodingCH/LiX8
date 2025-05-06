@@ -299,7 +299,6 @@ struct lix {
 
 	void iretstub()
 	{
-		this->pop(reg::S4);
 		this->pop(reg::S1);
 		this->pop(reg::S0);
 		this->pop(reg::PC);
@@ -310,7 +309,6 @@ struct lix {
 		this->push(reg::PC);
 		this->push(reg::S0);
 		this->push(reg::S1);
-		this->push(reg::S4);
 	}
 
 	void exec_svc()
@@ -327,7 +325,6 @@ struct lix {
 		this->push((reg) this->arg1);
 		this->push(reg::S0);
 		this->push(reg::S1);
-		this->push(reg::S4);
 	}
 
 	bool exec_str()
@@ -640,6 +637,8 @@ int main()
 		cpu.execute();
 		cpu.printinst();
 		std::cout << cpu.registers[reg::SP] << std::endl;
+		std::cout << cpu.registers[reg::S4] << std::endl;
+		std::cout << cpu.registers[reg::L0] << std::endl;
 	}
 
 	printf((char *) vgamem_at_the_end);

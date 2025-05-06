@@ -2,18 +2,19 @@ COMP = g++
 ARGS = -o
 C = $(COMP) $(ARGS)
 
-buildhw:
+buildpc:
 	$(C) lix16 main.cpp
 	$(C) lxsm  asm/simple.cpp
-	./lxsm helloworld.s -Pc
-
+	$(C) readlxe lxe/readlxe.cpp
+	./lxsm os.s -Pc
 
 build:
-	$(C) lix16 main.cpp
-	$(C) lxsm  asm/simple.cpp
+	$(C) lix16   main.cpp
+	$(C) lxsm    asm/simple.cpp
+	$(C) readlxe lxe/readlxe.cpp
 	./lxsm os.s
 
-testhw: buildhw
+testpc: buildpc
 	./lix16
 
 test: build
@@ -23,3 +24,4 @@ clean: build
 	rm lix16
 	rm lxsm
 	rm a.bin
+	rm readlxe
