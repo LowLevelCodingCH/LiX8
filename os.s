@@ -50,20 +50,11 @@ usp:
 uas:
 	16384
 
-tstr:
-	69, 105, 10, 69, 65, 10
-
 init:
 	svcstr ivt:
-
 	adrum kas:
-
 	adrbs kas:
-
 	mov sp, ksp:
 	ldr sp, sp
 
-	mov r0, tstr:
-	mov r1, 6
-	bl print:
 	hlt
