@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 		for (auto token : tokens) {
 			if ("" == token) continue;
 			if (".data" == token) {
-				datsec = i + (sizeof(lxe_hdr) / 2);
+				datsec = i + (sizeof(lxe_hdr));
 				indat  = true;
 				continue;
 			}
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 		if ("" == token) continue;
 
 		if (".data" == token) {
-			hdr.push_back(i + (sizeof(lxe_hdr) / 2));
+			if(pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr) / 2));
 			datsec = i + (sizeof(lxe_hdr) / 2);
 			indat  = true;
 			continue;
@@ -364,6 +364,9 @@ int main(int argc, char *argv[])
 	for (auto e : output)
 		hdr.push_back(e);
 
-	outfile.write(reinterpret_cast<char *>(hdr.data()), hdr.size() * sizeof(short));
+	if(pseudoclean)
+		outfile.write(reinterpret_cast<char *>(hdr.data()), hdr.size() * sizeof(short));
+	else
+		outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
 	outfile.close();
 }
