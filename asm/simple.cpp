@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 		if ("" == token) continue;
 
 		if (".data" == token) {
-			if (pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr) / 2));
+			if (pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr)));
 			datsec = i + (sizeof(lxe_hdr));
 			indat  = true;
 			continue;
