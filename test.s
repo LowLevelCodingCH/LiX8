@@ -1,5 +1,5 @@
 :
-hlt
+iret
 .data
 b:
 30

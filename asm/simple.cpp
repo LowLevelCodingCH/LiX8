@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 		if (!tokens[0].empty()) {
 			if (tokens[0].back() == ':') {
 				if (indat)
-					lbls.insert(std::pair<std::string, int>(tokens[0], i + datsec));
+					lbls.insert(std::pair<std::string, int>(tokens[0], j + datsec));
 				else
 					lbls.insert(std::pair<std::string, int>(tokens[0], i + codsec));
 				continue;
@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
 		hdr.push_back((short) lhtype::LIX_8_16);
 
 		// section .code begin
-		hdr.push_back(sizeof(lxe_hdr) / 2);
-		codsec = sizeof(lxe_hdr) / 2;
+		hdr.push_back(codsec);
 	}
+
 
 	// Pass 2: resolve tokens
 	std::cout << "Pass 2: Resolving tokens" << std::endl;
@@ -303,8 +303,7 @@ int main(int argc, char *argv[])
 		if ("" == token) continue;
 
 		if (".data" == token) {
-			if (pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr)));
-			datsec = i + (sizeof(lxe_hdr));
+			if (pseudoclean) hdr.push_back(datsec);
 			indat  = true;
 			continue;
 		}
