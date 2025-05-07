@@ -1,15 +1,15 @@
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <fcntl.h>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 #include <sstream>
+#include <stdlib.h>
 #include <string>
 #include <thread>
-#include <chrono>
+#include <unistd.h>
 
 /**
  * @author LowLevelCodingCH (Alex), 2025
@@ -32,7 +32,7 @@
 // Not the vga buffer
 
 char vgamem_at_the_end[1200] = {0};
-char idebuf[0xffff] = {0};
+char idebuf[0xffff]	     = {0};
 
 enum excep {
 	INV_OPCODE,
@@ -43,7 +43,7 @@ enum excep {
 
 enum hwint {
 	KBD_INT = 4, // continue
-	//...
+		     //...
 };
 
 /**
@@ -110,6 +110,10 @@ enum inst {
 	SVCSTR,
 	ADRUM,
 	ADRBS,
+	OR,
+	XOR,
+	AND,
+	NOT,
 	IRET,
 	IRETRG,
 };
@@ -161,15 +165,22 @@ std::string intoa(short i)
 		cr(BIL);
 		cr(BNZ);
 		cr(HLT);
+		cr(OR);
+		cr(XOR);
+		cr(AND);
+		cr(NOT);
 		cr(IRETRG);
 	default:
 		return "UNKNOWN";
 	}
 }
 
-void ide_execute_command(short to_write, short where, short command, short buf_adr, char *buffer) {
-	if(command == 0) idebuf[where] = (char) to_write;
-	else if(command == 1) buffer[buf_adr] = idebuf[where];
+void ide_execute_command(short to_write, short where, short command, short buf_adr, char *buffer)
+{
+	if (command == 0)
+		idebuf[where] = (char) to_write;
+	else if (command == 1)
+		buffer[buf_adr] = idebuf[where];
 }
 
 void vgaputc(short c)
@@ -246,9 +257,11 @@ struct lix {
 
 	// usually it wont get checked but sent via an interrupt controller but yh
 	/**
-	 * @brief Checks for interrupts, like an int controller but different. but it should work. itd read for kb input and if it gets that itd send an int
+	 * @brief Checks for interrupts, like an int controller but different. but it should work. itd read for kb input
+	 * and if it gets that itd send an int
 	 */
-	void check_hw_int() {
+	void check_hw_int()
+	{
 		// if it recieves one itll do this->hwintr(intr);
 	}
 
@@ -291,6 +304,9 @@ struct lix {
 		case inst::STRB:
 		case inst::CPY:
 		case inst::CMP:
+		case inst::OR:
+		case inst::XOR:
+		case inst::AND:
 		case inst::MOV:
 			this->registers[reg::PC] += 2;
 			break;
@@ -311,6 +327,7 @@ struct lix {
 		case inst::ADRBS:
 		case inst::ADRUM:
 		case inst::IRETRG:
+		case inst::NOT:
 			this->registers[reg::PC] += 1;
 		case inst::NOP:
 		case inst::HLT:
@@ -358,7 +375,7 @@ struct lix {
 
 	void exec_svc()
 	{
-		if(this->registers[reg::S5]) return;
+		if (this->registers[reg::S5]) return;
 
 		this->intstub();
 		this->registers[reg::S2] = prot::PROT_HI_0;
@@ -374,13 +391,15 @@ struct lix {
 		this->push(reg::S1);
 	}
 
-	void do_mmio() {
-		if (this->registers[(reg) this->arg0] >= VGA_MMIO && this->registers[(reg) this->arg0] <= VGA_MMIO + 1200)
+	void do_mmio()
+	{
+		if (this->registers[(reg) this->arg0] >= VGA_MMIO &&
+		    this->registers[(reg) this->arg0] <= VGA_MMIO + 1200)
 			vgaputc(this->registers[(reg) this->arg1]);
 		else if (this->registers[(reg) this->arg0] == IDE_MMIO)
 			ide_execute_command(this->memory[IDE_MMIO], this->memory[IDE_MMIO + 1],
-					this->memory[IDE_MMIO + 2], this->memory[IDE_MMIO + 3],
-					(char *) &this->rmemory[0]);
+					    this->memory[IDE_MMIO + 2], this->memory[IDE_MMIO + 3],
+					    (char *) &this->rmemory[0]);
 	}
 
 	bool exec_str()
@@ -427,8 +446,9 @@ struct lix {
 		return true;
 	}
 
-	void hwintr(hwint i) {
-		if(this->registers[reg::S5]) return;
+	void hwintr(hwint i)
+	{
+		if (this->registers[reg::S5]) return;
 
 		this->intstub();
 		this->registers[reg::S2] = prot::PROT_HI_0;
@@ -639,6 +659,33 @@ struct lix {
 			} else
 				break;
 			return;
+		case inst::OR:
+			if (this->isclean())
+				this->registers[(reg) this->arg0] =
+				    this->registers[(reg) this->arg0] | this->registers[(reg) this->arg1];
+			else
+				break;
+			return;
+		case inst::AND:
+			if (this->isclean())
+				this->registers[(reg) this->arg0] =
+				    this->registers[(reg) this->arg0] & this->registers[(reg) this->arg1];
+			else
+				break;
+			return;
+		case inst::NOT:
+			if (this->isclean())
+				this->registers[(reg) this->arg0] = !this->registers[(reg) this->arg0];
+			else
+				break;
+			return;
+		case inst::XOR:
+			if (this->isclean())
+				this->registers[(reg) this->arg0] =
+				    this->registers[(reg) this->arg0] ^ this->registers[(reg) this->arg1];
+			else
+				break;
+			return;
 		case inst::IRETRG:
 			this->exec_iretrg();
 			return;
@@ -662,9 +709,7 @@ struct lix {
 			this->registers[i] = 0;
 	}
 
-	void printreg(reg r) {
-		std::cout << (int) this->registers[r] << std::endl;
-	}
+	void printreg(reg r) { std::cout << (int) this->registers[r] << std::endl; }
 
 	void init()
 	{
@@ -692,7 +737,7 @@ int main()
 
 	std::ifstream file("a.bin");
 	std::ostringstream a;
-	int i = 0;
+	int i  = 0;
 	int fd = open("disk.img", O_RDWR);
 	read(fd, idebuf, 0xffff);
 
@@ -713,7 +758,7 @@ int main()
 		cpu.check_hw_int();
 		cpu.printinst();
 	}
-	
+
 	printf((char *) vgamem_at_the_end);
 	write(fd, idebuf, 0xffff);
 	close(fd);

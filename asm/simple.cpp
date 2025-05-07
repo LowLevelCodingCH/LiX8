@@ -79,6 +79,10 @@ enum inst {
 	SVCSTR,
 	ADRUM,
 	ADRBS,
+	OR,
+	XOR,
+	AND,
+	NOT,
 	IRET,
 	IRETRG,
 };
@@ -117,6 +121,14 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return SUB;
 	else if ("mul" == token)
 		return MUL;
+	else if ("and" == token)
+		return AND;
+	else if ("or" == token)
+		return OR;
+	else if ("not" == token)
+		return NOT;
+	else if ("xor" == token)
+		return XOR;
 	else if ("div" == token)
 		return DIV;
 	else if ("push" == token)
@@ -277,7 +289,6 @@ int main(int argc, char *argv[])
 	}
 
 	i = 0;
-
 
 	// Pass 2: resolve tokens
 	std::cout << "Pass 2: Resolving tokens" << std::endl;
