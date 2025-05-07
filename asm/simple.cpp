@@ -218,39 +218,18 @@ std::vector<std::string> split(std::string string, char *delimiter)
 	return result;
 }
 
-enum lhtype {
-	TINVAL,
-	LIX_8_16,
-};
-
-struct lxe_hdr {
-	short lh_magic[3];
-	short lh_type, lh_sec_code_begin, lh_sec_data_begin, lh_sec_symtab_begin, lh_symtb_entries;
-};
-
 int main(int argc, char *argv[])
 {
-	if (argc != 2 && argc != 3) exit(1);
+	if (argc != 2) exit(1);
 
 	std::ifstream file(argv[1]);
 	std::string line;
 	std::stringstream text;
 	std::vector<short> output;
-	std::vector<short> hdr;
-	lxe_hdr ehdr;
 	std::ofstream outfile("a.bin");
 	int i = 0, tokmnt = 0, j = 0;
-	bool pseudoclean = false;
-	bool data	 = false;
 	std::unordered_map<std::string, int> lbls;
 	std::vector<std::string> gtokens;
-	int datsec = 0;
-	int codsec = 0;
-	bool indat = false;
-	codsec	   = sizeof(lxe_hdr) / 2;
-
-	if (argc == 3)
-		if (!strcasecmp(argv[2], "-Pc")) pseudoclean = true;
 
 	// Pass 1: resolve labels
 	std::cout << "Pass 1: Resolving labels and symbols" << std::endl;
@@ -260,53 +239,25 @@ int main(int argc, char *argv[])
 
 		if (!tokens[0].empty()) {
 			if (tokens[0].back() == ':') {
-				if (indat)
-					lbls.insert(std::pair<std::string, int>(tokens[0], j + datsec));
-				else
-					lbls.insert(std::pair<std::string, int>(tokens[0], i + codsec));
+				lbls.insert(std::pair<std::string, int>(tokens[0], i));
 				continue;
 			}
 		}
 
 		for (auto token : tokens) {
 			if ("" == token) continue;
-			if (".data" == token) {
-				datsec = i + (sizeof(lxe_hdr));
-				indat  = true;
-				continue;
-			}
-
 			gtokens.push_back(token);
 			++i;
-			if (indat) j++;
 		}
 	}
 
-	indat = false;
-
 	i = 0;
-
-	if (pseudoclean) {
-		for (auto a : "lxe")
-			if (a) hdr.push_back((short) a);
-
-		hdr.push_back((short) lhtype::LIX_8_16);
-
-		// section .code begin
-		hdr.push_back(codsec);
-	}
 
 
 	// Pass 2: resolve tokens
 	std::cout << "Pass 2: Resolving tokens" << std::endl;
 	for (auto token : gtokens) {
 		if ("" == token) continue;
-
-		if (".data" == token) {
-			if (pseudoclean) hdr.push_back(datsec);
-			indat  = true;
-			continue;
-		}
 
 		if (token.back() == ':') {
 			auto lbl = lbls.find(token);
@@ -327,41 +278,8 @@ int main(int argc, char *argv[])
 		++i;
 	}
 
-	if (pseudoclean) {
-		std::cout << "Pass 3" << std::endl;
-
-		// That if it ever gets here it stops
-		output.push_back((short) HLT);
-
-		i += (sizeof(lxe_hdr) / 2) + 1;
-		hdr.push_back(datsec);
-		// section .symtab begin
-		hdr.push_back(i);
-
-		short j = 0;
-
-		for (auto a : lbls) {
-			for (auto c : a.first)
-				output.push_back((short) c);
-			for (i = 0; i < 256 - a.first.size(); i++)
-				output.push_back(0);
-			output.push_back(0);
-			output.push_back(a.second);
-			j++;
-		}
-
-		// symtab entries
-		hdr.push_back(j);
-	}
-
 	file.close();
 
-	for (auto e : output)
-		hdr.push_back(e);
-
-	if (pseudoclean)
-		outfile.write(reinterpret_cast<char *>(hdr.data()), hdr.size() * sizeof(short));
-	else
-		outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
+	outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
 	outfile.close();
 }

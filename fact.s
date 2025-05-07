@@ -30,7 +30,8 @@ begn:
 	bl fact:
 	hlt
 
-.data
+
+
 
 fact_num:
 	5

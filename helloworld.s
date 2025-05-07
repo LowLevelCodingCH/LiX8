@@ -27,7 +27,8 @@ begin:
 	bl print:
 	hlt
 
-.data
+
+
 string:
 	72 101 108
 	108 111 32

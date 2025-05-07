@@ -60,9 +60,33 @@ init:
 
 	swi 1
 
-	hlt
+# Should write an A
+	mov r0, ide::dat:
+	ldr r0, r0
 
-.data
+	mov r1, ide::adr:
+	ldr r1, r1
+
+	mov r2, ide::cmd:
+	ldr r2, r2
+
+	mov r3, ide::buf:
+	ldr r3, r3
+
+# Why does this segfault and load weird ass instructions
+#	mov r4, 0
+#	str r1, r4
+#
+#	mov r4, 0
+#	str r2, r4
+#
+#	mov r4, 0
+#	str r3, r4
+#
+#	mov r4, 65
+#	str r0, r4
+
+	hlt
 
 finddat:
 	65, 69, 105
@@ -79,6 +103,22 @@ vga::base:
 print::cursor:
 	0
 
+# void ide_execute_command(short to_write, short where, short command, short buf_adr, char *buffer) {
+# 	if(command == 0) idebuf[where] = to_write;
+# 	else if(command == 1) buffer[buf_adr] = idebuf[where];
+# }
+
+# IDE mmio
+
+ide::dat:
+	4200
+ide::adr:
+	4201
+ide::cmd:
+	4202
+ide::buf:
+	4203
+
 # k adr space
 kas:
 	0
@@ -90,12 +130,3 @@ usp:
 	16384
 uas:
 	16384
-0
-0
-0
-0
-0
-0
-0
-0
-

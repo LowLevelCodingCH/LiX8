@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -6,6 +9,7 @@
 #include <sstream>
 #include <string>
 
+// MMIO , not PMIO. ik that mmio doesnt work like that but it is close enough!
 #define HW_SUP
 // #undef HW_SUP
 
@@ -16,9 +20,14 @@
 
 #define PROGLEN 800
 #define PROGADR 0
+
+#define VGA_MMIO 1200
+#define IDE_MMIO 4200
+
 // Not the vga buffer
 
 char vgamem_at_the_end[1200] = {0};
+char idebuf[0xffff] = {0};
 
 enum excep {
 	INV_OPCODE,
@@ -136,6 +145,12 @@ std::string intoa(short i)
 	default:
 		return "UNKNOWN";
 	}
+}
+
+// Works
+void ide_execute_command(short to_write, short where, short command, short buf_adr, char *buffer) {
+	if(command == 0) idebuf[where] = to_write;
+	else if(command == 1) buffer[buf_adr] = idebuf[where];
 }
 
 void vgaputc(short c)
@@ -328,6 +343,15 @@ struct lix {
 		this->push(reg::S1);
 	}
 
+	void do_mmio() {
+		if (this->registers[(reg) this->arg0] >= VGA_MMIO && this->registers[(reg) this->arg0] <= VGA_MMIO + 1200)
+			vgaputc(this->registers[(reg) this->arg1]);
+		else if (this->registers[(reg) this->arg0] == IDE_MMIO)
+			ide_execute_command(this->memory[IDE_MMIO], this->memory[IDE_MMIO + 1],
+					this->memory[IDE_MMIO + 2], this->memory[IDE_MMIO + 3],
+					(char *) &this->rmemory[0]);
+	}
+
 	bool exec_str()
 	{
 		if (this->registers[(reg) this->arg0] < this->registers[reg::S3]) return false;
@@ -335,8 +359,7 @@ struct lix {
 		this->memory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
 		    (char) this->registers[(reg) this->arg1];
 #ifdef HW_SUP
-		if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
-			vgaputc(this->registers[(reg) this->arg1]);
+		this->do_mmio();
 #endif
 		return true;
 	}
@@ -348,8 +371,7 @@ struct lix {
 		this->rmemory[this->registers[(reg) this->arg0] + this->registers[reg::S4]] =
 		    (char) this->registers[(reg) this->arg1];
 #ifdef HW_SUP
-		if (this->registers[(reg) this->arg0] >= 1200 && this->registers[(reg) this->arg0] <= 2400)
-			vgaputc(this->registers[(reg) this->arg1]);
+		this->do_mmio();
 #endif
 		return true;
 	}
@@ -564,6 +586,11 @@ struct lix {
 			return;
 		case inst::DIV:
 			if (this->isclean()) {
+				if (!this->registers[(reg) this->arg1]) {
+					this->fault(excep::DIV_BY_ZERO);
+					return;
+				}
+				
 				this->registers[reg::L6] =
 				    std::round(this->registers[(reg) this->arg0] / this->registers[(reg) this->arg1]);
 				this->registers[reg::L7] =
@@ -594,6 +621,10 @@ struct lix {
 			this->registers[i] = 0;
 	}
 
+	void printreg(reg r) {
+		std::cout << (int) this->registers[r] << std::endl;
+	}
+
 	void init()
 	{
 		this->memory = (unsigned short *) &(this->rmemory[0]);
@@ -621,6 +652,8 @@ int main()
 	std::ifstream file("a.bin");
 	std::ostringstream a;
 	int i = 0;
+	int fd = open("disk.img", O_RDWR);
+	read(fd, idebuf, 0xffff);
 
 	a << file.rdbuf();
 
@@ -638,7 +671,9 @@ int main()
 		cpu.execute();
 		cpu.printinst();
 	}
-
+	
 	printf((char *) vgamem_at_the_end);
+	write(fd, idebuf, 0xffff);
+	close(fd);
 	return 0;
 }
