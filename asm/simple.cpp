@@ -1,8 +1,8 @@
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cstring>
 #include <unordered_map>
 #include <vector>
 /**
@@ -225,11 +225,7 @@ enum lhtype {
 
 struct lxe_hdr {
 	short lh_magic[3];
-	short lh_type,
-	      lh_sec_code_begin,
-	      lh_sec_data_begin,
-	      lh_sec_symtab_begin,
-	      lh_symtb_entries;
+	short lh_type, lh_sec_code_begin, lh_sec_data_begin, lh_sec_symtab_begin, lh_symtb_entries;
 };
 
 int main(int argc, char *argv[])
@@ -307,8 +303,8 @@ int main(int argc, char *argv[])
 		if ("" == token) continue;
 
 		if (".data" == token) {
-			if(pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr) / 2));
-			datsec = i + (sizeof(lxe_hdr) / 2);
+			if (pseudoclean) hdr.push_back(i + (sizeof(lxe_hdr) / 2));
+			datsec = i + (sizeof(lxe_hdr));
 			indat  = true;
 			continue;
 		}
@@ -364,7 +360,7 @@ int main(int argc, char *argv[])
 	for (auto e : output)
 		hdr.push_back(e);
 
-	if(pseudoclean)
+	if (pseudoclean)
 		outfile.write(reinterpret_cast<char *>(hdr.data()), hdr.size() * sizeof(short));
 	else
 		outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
