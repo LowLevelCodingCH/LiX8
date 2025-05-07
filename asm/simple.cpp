@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 /**
  * @author LowLevelCodingCH (Alex), 2025
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
@@ -22,6 +23,14 @@ enum reg {
 	L5,
 	L6,
 	L7,
+	L8,
+	L9,
+	L10,
+	L11,
+	L12,
+	L13,
+	L14,
+	L15,
 
 	LR,
 
@@ -168,6 +177,22 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return L6;
 	else if ("r7" == token)
 		return L7;
+	else if ("r8" == token)
+		return L8;
+	else if ("r9" == token)
+		return L9;
+	else if ("r10" == token)
+		return L10;
+	else if ("r11" == token)
+		return L11;
+	else if ("r12" == token)
+		return L12;
+	else if ("r13" == token)
+		return L13;
+	else if ("r14" == token)
+		return L14;
+	else if ("r15" == token)
+		return L15;
 	else if ("lr" == token)
 		return LR;
 	else if ("s1" == token)

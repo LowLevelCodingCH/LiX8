@@ -8,21 +8,26 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
-
-// MMIO , not PMIO. ik that mmio doesnt work like that but it is close enough!
-#define HW_SUP
-// #undef HW_SUP
+#include <thread>
+#include <chrono>
 
 /**
  * @author LowLevelCodingCH (Alex), 2025
  * @copyright BSD 2 Clause, (c) LowLevelCodingCH
  */
 
+// Sometimes uses !(thing). !(thing) means basically (thing == 0), and (thing) means (thing >= 1).
+
+// MMIO , not PMIO. ik that mmio doesnt work like that but it is close enough!
+#define HW_SUP
+// #undef HW_SUP
+
 #define PROGLEN 800
 #define PROGADR 0
 
-#define VGA_MMIO 1200
-#define IDE_MMIO 4200
+#define VGA_MMIO 0x6000
+#define KBD_MMIO (0x6000 + 1200)
+#define IDE_MMIO (0x6000 + 1200 + 0x100)
 
 // Not the vga buffer
 
@@ -35,6 +40,12 @@ enum excep {
 	DOUBLE_FLT,
 	PROT_FLT,
 };
+
+enum hwint {
+	KBD_INT = 4, // continue
+	//...
+};
+
 /**
  * @brief PROT_HI_0 is the highest priv
  */
@@ -51,12 +62,21 @@ enum reg {
 	L5,
 	L6,
 	L7,
+	L8,
+	L9,
+	L10,
+	L11,
+	L12,
+	L13,
+	L14,
+	L15,
 	LR,
 	S0,
 	S1,
 	S2,
 	S3,
 	S4,
+	S5, // interrupt disable flag
 };
 
 enum inst {
@@ -147,18 +167,17 @@ std::string intoa(short i)
 	}
 }
 
-// Works
 void ide_execute_command(short to_write, short where, short command, short buf_adr, char *buffer) {
-	if(command == 0) idebuf[where] = to_write;
+	if(command == 0) idebuf[where] = (char) to_write;
 	else if(command == 1) buffer[buf_adr] = idebuf[where];
 }
 
 void vgaputc(short c)
 {
 	static int i	       = 0;
-	char ch		       = (char) c;
-	char fm		       = (char) (c << 8); // i think
-	vgamem_at_the_end[i++] = ch;		  // formatting gets ignored
+	char ch		       = c & 0x00ff;
+	char fm		       = c & 0xff00;
+	vgamem_at_the_end[i++] = ch;
 }
 
 /**
@@ -217,13 +236,21 @@ void vgaputc(short c)
  * @param len The number of instructions to load.
  */
 struct lix {
-	std::uint16_t registers[16];
+	std::uint16_t registers[25];
 	std::uint16_t inst;
 	std::uint16_t arg0;
 	std::uint16_t arg1;
 	// ffff * 2 because sizeof memory is just sizeof rmemory / 2. because 16 is 2x8.
 	std::uint8_t rmemory[0xFFFF * 2]; // Not included by def
 	std::uint16_t *memory;
+
+	// usually it wont get checked but sent via an interrupt controller but yh
+	/**
+	 * @brief Checks for interrupts, like an int controller but different. but it should work. itd read for kb input and if it gets that itd send an int
+	 */
+	void check_hw_int() {
+		// if it recieves one itll do this->hwintr(intr);
+	}
 
 	/**
 	 * @brief Prints a program
@@ -318,6 +345,7 @@ struct lix {
 		this->pop(reg::S1);
 		this->pop(reg::S0);
 		this->pop(reg::PC);
+		this->registers[reg::S5] = 0;
 	}
 
 	void intstub()
@@ -325,10 +353,13 @@ struct lix {
 		this->push(reg::PC);
 		this->push(reg::S0);
 		this->push(reg::S1);
+		this->registers[reg::S5] = 1;
 	}
 
 	void exec_svc()
 	{
+		if(this->registers[reg::S5]) return;
+
 		this->intstub();
 		this->registers[reg::S2] = prot::PROT_HI_0;
 		if (this->memory[this->registers[reg::LR] + this->arg0] == 0)
@@ -394,6 +425,16 @@ struct lix {
 		else
 			return false;
 		return true;
+	}
+
+	void hwintr(hwint i) {
+		if(this->registers[reg::S5]) return;
+
+		this->intstub();
+		this->registers[reg::S2] = prot::PROT_HI_0;
+		if (this->memory[this->registers[reg::LR] + i] == 0)
+			this->registers[reg::PC] = this->memory[this->registers[reg::LR] + excep::DOUBLE_FLT];
+		this->registers[reg::PC] = this->memory[this->registers[reg::LR] + i];
 	}
 
 	void fault(excep e)
@@ -590,10 +631,10 @@ struct lix {
 					this->fault(excep::DIV_BY_ZERO);
 					return;
 				}
-				
-				this->registers[reg::L6] =
+
+				this->registers[reg::L14] =
 				    std::round(this->registers[(reg) this->arg0] / this->registers[(reg) this->arg1]);
-				this->registers[reg::L7] =
+				this->registers[reg::L15] =
 				    this->registers[(reg) this->arg0] % this->registers[(reg) this->arg1];
 			} else
 				break;
@@ -611,13 +652,13 @@ struct lix {
 
 	void clearmem()
 	{
-		for (int i = 0; i < 8192; i++)
+		for (int i = 0; i < 0xffff; i++)
 			this->memory[i] = 0;
 	}
 
 	void clearreg()
 	{
-		for (int i = 0; i < 16; i++)
+		for (int i = 0; i < 25; i++)
 			this->registers[i] = 0;
 	}
 
@@ -669,6 +710,7 @@ int main()
 		cpu.fetch();
 		if (cpu.inst == HLT) break;
 		cpu.execute();
+		cpu.check_hw_int();
 		cpu.printinst();
 	}
 	
