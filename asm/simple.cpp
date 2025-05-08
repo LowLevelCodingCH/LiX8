@@ -211,7 +211,7 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return S1;
 	else if ("s0" == token)
 		return S0;
-	else if ("" == token)
+	else if ("" == token || token[0] == '.')
 		return 0;
 	if (token.back() == ':') {
 		auto lbl = lbls.find(token);
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
 	if (argc != 2) exit(1);
 
 	std::ifstream file(argv[1]);
-	std::string line;
+	std::string line, incln;
 	std::stringstream text;
 	std::vector<short> output;
 	std::ofstream outfile("a.bin");
@@ -283,6 +283,26 @@ int main(int argc, char *argv[])
 
 		for (auto token : tokens) {
 			if ("" == token) continue;
+			if (token[0] == '.' && token[1] == 'i') {
+				std::ifstream included(split(token, "=")[1]);
+				while(std::getline(included, incln)) {
+					if (incln[0] == '#') continue;
+					auto toks = split(incln, " \t,[]{}()");
+
+					if (!toks[0].empty()) {
+						if (toks[0].back() == ':') {
+							lbls.insert(std::pair<std::string, int>(toks[0], i));
+							continue;
+						}
+					}
+
+					for(auto tok : toks) {
+						if ("" == tok) continue;
+						gtokens.push_back(tok);
+					}
+				}
+			}
+
 			gtokens.push_back(token);
 			++i;
 		}

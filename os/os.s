@@ -178,32 +178,14 @@ init:
 	mov sp, ksp:
 	ldr sp, sp
 
-#adrum uas:
-#adrbs uas:
+	adrum uas:
+	adrbs uas:
+	
+	mov sp, usp:
+	ldr sp, sp
+	
+	swi 1
 
-#mov sp, usp:
-#ldr sp, sp
-
-#swi 1
-
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 
 	hlt
 
@@ -223,11 +205,6 @@ vga::base:
 	24576
 print::cursor:
 	0
-
-# void ide_execute_command(short to_write, short where, short command, short buf_adr, char *buffer) {
-# 	if(command == 0) idebuf[where] = to_write;
-# 	else if(command == 1) buffer[buf_adr] = idebuf[where];
-# }
 
 # IDE mmio
 
