@@ -4,6 +4,9 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 #include <vector>
 
 /**
@@ -211,7 +214,7 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return S1;
 	else if ("s0" == token)
 		return S0;
-	else if ("" == token || token[0] == '.')
+	else if ("" == token || "#import" == token)
 		return 0;
 	if (token.back() == ':') {
 		auto lbl = lbls.find(token);
@@ -231,14 +234,19 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 }
 } // namespace lixasm
 
-bool instr(char c, char *s)
+bool instr(char c, std::string s)
 {
-	for (int i = 0; i < strlen(s); i++)
-		if (c == s[i]) return true;
+	for (auto d : s)
+		if (c == d) return true;
 	return false;
 }
 
-std::vector<std::string> split(std::string string, char *delimiter)
+bool startswith(std::string is, std::string st)
+{
+	return strncmp((char *) &is[0], (char *) &st[0], strlen((char *) &st[0]));
+}
+
+std::vector<std::string> split(std::string string, std::string delimiter)
 {
 	std::string buffer;
 	std::vector<std::string> result;
@@ -260,6 +268,8 @@ int main(int argc, char *argv[])
 	if (argc != 2) exit(1);
 
 	std::ifstream file(argv[1]);
+	close(open("lxsm.pproc.obj.s", O_CREAT | O_TRUNC | O_RDWR, 0777));
+	std::ofstream ifile("lxsm.pproc.obj.s");
 	std::string line, incln;
 	std::stringstream text;
 	std::vector<short> output;
@@ -268,10 +278,26 @@ int main(int argc, char *argv[])
 	std::unordered_map<std::string, int> lbls;
 	std::vector<std::string> gtokens;
 
-	// Pass 1: resolve labels
-	std::cout << "Pass 1: Resolving labels and symbols" << std::endl;
+	std::cout << "Pass 0: Preprocessing" << std::endl;
 	while (std::getline(file, line)) {
-		if (line[0] == '#') continue;
+		if (!startswith(line, "#import !")) {
+			std::ifstream included(split(line, "!")[1]);
+
+			while(std::getline(included, incln)) {
+				if (incln[0] == '#') continue;
+				if ("" == incln) continue;
+				ifile << incln << "\n";
+			}
+
+			continue;
+		} else
+			ifile << line << "\n";
+	}
+
+	ifile.close();
+	std::ifstream ifil("lxsm.pproc.obj.s");
+	std::cout << "Pass 1: Resolving labels and symbols" << std::endl;
+	while (std::getline(ifil, line)) {
 		auto tokens = split(line, " \t,[]{}()");
 
 		if (!tokens[0].empty()) {
@@ -283,25 +309,6 @@ int main(int argc, char *argv[])
 
 		for (auto token : tokens) {
 			if ("" == token) continue;
-			if (token[0] == '.' && token[1] == 'i') {
-				std::ifstream included(split(token, "=")[1]);
-				while(std::getline(included, incln)) {
-					if (incln[0] == '#') continue;
-					auto toks = split(incln, " \t,[]{}()");
-
-					if (!toks[0].empty()) {
-						if (toks[0].back() == ':') {
-							lbls.insert(std::pair<std::string, int>(toks[0], i));
-							continue;
-						}
-					}
-
-					for(auto tok : toks) {
-						if ("" == tok) continue;
-						gtokens.push_back(tok);
-					}
-				}
-			}
 
 			gtokens.push_back(token);
 			++i;
@@ -310,7 +317,6 @@ int main(int argc, char *argv[])
 
 	i = 0;
 
-	// Pass 2: resolve tokens
 	std::cout << "Pass 2: Resolving tokens" << std::endl;
 	for (auto token : gtokens) {
 		if ("" == token) continue;
@@ -338,4 +344,6 @@ int main(int argc, char *argv[])
 
 	outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
 	outfile.close();
+	ifil.close();
+//	unlink("lxsm.pproc.obj.s");
 }
