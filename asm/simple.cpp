@@ -289,6 +289,7 @@ int main(int argc, char *argv[])
 
 	std::cout << "Pass 0: Preprocessing" << std::endl;
 	while (std::getline(file, line)) {
+		if (line[0] == '#' && strncmp(&line[0], "#import !", 9)) continue;
 		if (!startswith(line, "#import !")) {
 			std::ifstream included(split(line, "!")[1]);
 
