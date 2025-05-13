@@ -23,9 +23,6 @@ init:
 	
 	swi 1
 
-	mov r0, 1
-	mov r1, finddat:
-	mov r2, 3
-	svc 5
+# Userspace here
 
 	hlt

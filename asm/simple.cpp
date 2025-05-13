@@ -42,6 +42,7 @@ enum reg {
 	S2,
 	S3,
 	S4,
+	S5,
 };
 
 enum inst {
@@ -214,6 +215,14 @@ short get_inst(std::string token, std::unordered_map<std::string, int> lbls)
 		return S1;
 	else if ("s0" == token)
 		return S0;
+	else if ("s2" == token)
+		return S2;
+	else if ("s3" == token)
+		return S3;
+	else if ("s4" == token)
+		return S4;
+	else if ("s5" == token)
+		return S5;
 	else if ("" == token || "#import" == token)
 		return 0;
 	if (token.back() == ':') {
@@ -290,7 +299,7 @@ int main(int argc, char *argv[])
 			}
 
 			continue;
-		} else
+		} else if ("" != line)
 			ifile << line << "\n";
 	}
 
@@ -345,5 +354,5 @@ int main(int argc, char *argv[])
 	outfile.write(reinterpret_cast<char *>(output.data()), output.size() * sizeof(short));
 	outfile.close();
 	ifil.close();
-//	unlink("lxsm.pproc.obj.s");
+	unlink("lxsm.pproc.obj.s");
 }

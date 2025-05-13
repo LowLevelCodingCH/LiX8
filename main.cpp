@@ -76,7 +76,7 @@ enum reg {
 	S2,
 	S3,
 	S4,
-	S5, // interrupt disable flag
+	S5,
 };
 
 enum inst {
@@ -359,10 +359,12 @@ struct lix {
 
 	void iretstub()
 	{
+		this->pop(reg::LR);
+		this->pop(reg::S5);
+		this->pop(reg::S2);
 		this->pop(reg::S1);
 		this->pop(reg::S0);
 		this->pop(reg::PC);
-		this->registers[reg::S5] = 0;
 	}
 
 	void intstub()
@@ -370,7 +372,9 @@ struct lix {
 		this->push(reg::PC);
 		this->push(reg::S0);
 		this->push(reg::S1);
-		this->registers[reg::S5] = 1;
+		this->push(reg::S2);
+		this->push(reg::S5);
+		this->push(reg::LR);
 	}
 
 	void exec_svc()
@@ -506,8 +510,10 @@ struct lix {
 
 	bool isclean()
 	{
-		return (this->arg0 != reg::S2 && this->arg0 != reg::LR && this->arg0 != reg::S3 &&
-			this->arg0 != reg::S4);
+		return (this->arg0 != reg::LR && this->arg0 != reg::S0 &&
+			this->arg0 != reg::S1 && this->arg0 != reg::S2 &&
+			this->arg0 != reg::S3 && this->arg0 != reg::S4 &&
+			this->arg0 != reg::S5);
 	}
 
 	void exec_b() { this->registers[reg::PC] = this->registers[reg::S4] + this->arg0; }
